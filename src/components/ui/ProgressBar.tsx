@@ -1,14 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-
-interface ProgressBarProps {
-  current: number
-  total: number
-  color?: string
-  height?: string
-  showLabel?: boolean
-}
+import { ProgressBarProps } from '../../types'
 
 export const ProgressBar: React.FC<ProgressBarProps> = ({
   current,

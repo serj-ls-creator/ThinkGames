@@ -2,16 +2,7 @@
 
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-
-interface SectionCardProps {
-  title: string
-  icon: string
-  description: string
-  progress: number
-  color: string
-  href: string
-  games?: { name: string; href: string }[]
-}
+import { SectionCardProps } from '../../types'
 
 export const SectionCard: React.FC<SectionCardProps> = ({
   title,

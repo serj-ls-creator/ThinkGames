@@ -2,14 +2,7 @@
 
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-
-interface PageHeaderProps {
-  title: string
-  showBack?: boolean
-  backHref?: string
-  backLabel?: string
-  color?: 'purple' | 'orange' | 'blue'
-}
+import { PageHeaderProps } from '../../types'
 
 const colorClasses = {
   purple: 'from-purple-600 to-indigo-600',

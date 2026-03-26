@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Card as CardType } from '../../../store/useGameStore'
+import { Card as CardType } from '../../../types'
 
 interface CardProps {
   card: CardType

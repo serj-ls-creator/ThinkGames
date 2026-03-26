@@ -2,27 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-
-interface Level {
-  value: number
-  label: string
-  description: string
-}
-
-interface GridSize {
-  rows: number
-  cols: number
-  label: string
-  description: string
-}
-
-interface LevelSelectorProps {
-  levels: Level[]
-  gridSizes?: GridSize[]
-  colorTheme: 'purple' | 'orange' | 'green'
-  onLevelSelect?: (level: number) => void
-  onGridSizeSelect?: (gridSize: { rows: number; cols: number }) => void
-}
+import { Level, GridSizeOption, LevelSelectorProps } from '../../types'
 
 const colorThemes = {
   purple: {
@@ -71,7 +51,7 @@ export const LevelSelector: React.FC<LevelSelectorProps> = ({
         </h2>
         
         <div className="grid gap-4 md:grid-cols-3 max-w-2xl mx-auto">
-          {levels.map((lvl, index) => (
+          {levels.map((lvl: Level, index: number) => (
             <motion.div
               key={lvl.value}
               initial={{ opacity: 0, y: 20 }}
@@ -106,7 +86,7 @@ export const LevelSelector: React.FC<LevelSelectorProps> = ({
           </h2>
           
           <div className="grid gap-4 md:grid-cols-3 max-w-2xl mx-auto">
-            {gridSizes.map((size, index) => (
+            {gridSizes.map((size: GridSizeOption, index: number) => (
               <motion.div
                 key={`${size.rows}x${size.cols}`}
                 initial={{ opacity: 0, y: 20 }}

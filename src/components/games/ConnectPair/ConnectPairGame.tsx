@@ -3,14 +3,10 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-
-interface PairItem {
-  left: string
-  right: string
-}
+import { WordPair } from '../../../types'
 
 interface ConnectPairGameProps {
-  items: PairItem[]
+  items: WordPair[]
   title: string
 }
 
