@@ -1,137 +1,79 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { Header } from '../../../components/Header'
-import { GameGrid } from '../../../components/GameGrid'
+import { useRouter } from 'next/navigation'
+import { LevelSelector } from '../../../components/LevelSelector'
 import { useGameStore } from '../../../store/useGameStore'
-import { saveGameProgress } from '../../../lib/supabaseClient'
-import { calculateScore } from '../../../lib/generatePairs'
-import { getSessionId } from '../../../lib/utils'
 
-export default function PairGamePage() {
-  const {
-    cards,
-    matchedPairs,
-    moves,
-    level,
-    gameCompleted,
-    initializeGame,
-    resetGame,
-  } = useGameStore()
+const levels = [
+  { value: 20, label: 'До 20', description: 'Легкий рівень' },
+  { value: 50, label: 'До 50', description: 'Середній рівень' },
+  { value: 100, label: 'До 100', description: 'Складний рівень' },
+]
 
-  const [isSaving, setIsSaving] = useState(false)
+const gridSizes = [
+  { rows: 3, cols: 4, label: '3×4', description: '12 карток' },
+  { rows: 4, cols: 4, label: '4×4', description: '16 карток' },
+  { rows: 3, cols: 6, label: '3×6', description: '18 карток' },
+]
 
-  useEffect(() => {
-    if (!cards.length) {
-      initializeGame(level)
-    }
-  }, [cards.length, initializeGame, level])
+export default function PairGameLevelPage() {
+  const router = useRouter()
+  const { level, gridSize, setLevel, setGridSize, initializeGame } = useGameStore()
 
-  useEffect(() => {
-    if (gameCompleted && !isSaving) {
-      handleGameComplete()
-    }
-  }, [gameCompleted, isSaving])
-
-  const handleGameComplete = async () => {
-    setIsSaving(true)
-    
-    try {
-      const sessionId = getSessionId()
-      const score = calculateScore(moves, level)
-      
-      await saveGameProgress(sessionId, level, score)
-    } catch (error) {
-      console.error('Failed to save game progress:', error)
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  const handleResetGame = () => {
-    resetGame()
-    initializeGame(level)
+  const handleStartGame = () => {
+    initializeGame(level, gridSize)
+    router.push('/math/pair-game/play')
   }
 
   return (
-    <div className="min-h-screen px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-[#EEE9FF] via-[#F5F0FF] to-[#FAF5FF] px-4 py-8">
       <div className="max-w-4xl mx-auto">
+        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-6"
+          className="text-center mb-8"
         >
           <Link
             href="/math"
-            className="inline-flex items-center text-gray-600 hover:text-primary-600 transition-colors mb-4"
+            className="inline-flex items-center text-gray-600 hover:text-green-600 transition-colors mb-6 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full shadow-md"
           >
             ← Назад до математики
           </Link>
+          
+          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-4">
+            Знайди пару
+          </h1>
+          
+          <p className="text-lg text-gray-600">
+            Оберіть рівень складності та розмір поля
+          </p>
         </motion.div>
-
-        <Header title="Знайди пару" showProgress={true} />
-
-        <div className="text-center mb-6">
-          <div className="text-lg text-gray-600">
-            Ходів: <span className="font-bold text-primary-600">{moves}</span>
-          </div>
-        </div>
 
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="mb-8"
         >
-          <GameGrid />
+          <LevelSelector />
         </motion.div>
 
-        {gameCompleted && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-center space-y-4"
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="text-center mt-8"
+        >
+          <button
+            onClick={handleStartGame}
+            className="inline-block px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xl font-bold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:from-green-600 hover:to-emerald-600"
           >
-            <h2 className="text-3xl font-bold text-green-600 mb-4">
-              🎉 Вітаю! Гру завершено!
-            </h2>
-            
-            <div className="text-lg text-gray-600 mb-6">
-              Результат: <span className="font-bold text-primary-600">{calculateScore(moves, level)}</span> очок
-            </div>
-
-            <div className="flex gap-4 justify-center">
-              <button
-                onClick={handleResetGame}
-                className="px-6 py-3 bg-gradient-to-r from-primary-500 to-secondary-500 text-white font-bold rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
-              >
-                Грати знову
-              </button>
-              
-              <Link
-                href="/math"
-                className="inline-block px-6 py-3 bg-gray-500 text-white font-bold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:bg-gray-600"
-              >
-                Новий рівень
-              </Link>
-            </div>
-          </motion.div>
-        )}
-
-        {!gameCompleted && (
-          <div className="text-center">
-            <button
-              onClick={handleResetGame}
-              className="px-6 py-3 bg-gray-500 text-white font-bold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:bg-gray-600"
-            >
-              Почати знову
-            </button>
-          </div>
-        )}
+            Грати
+          </button>
+        </motion.div>
       </div>
     </div>
   )

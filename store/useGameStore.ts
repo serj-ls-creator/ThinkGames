@@ -8,23 +8,30 @@ export interface Card {
   isMatched: boolean
 }
 
+export interface GridSize {
+  rows: number
+  cols: number
+}
+
 export interface GameState {
   cards: Card[]
   selectedCards: string[]
   matchedPairs: number
   moves: number
   level: number
+  gridSize: GridSize
   isChecking: boolean
   gameStarted: boolean
   gameCompleted: boolean
 }
 
 export interface GameActions {
-  initializeGame: (level: number) => void
+  initializeGame: (level: number, gridSize?: GridSize) => void
   flipCard: (cardId: string) => void
   checkMatch: () => void
   resetGame: () => void
   setLevel: (level: number) => void
+  setGridSize: (gridSize: GridSize) => void
   setGameCompleted: (completed: boolean) => void
 }
 
@@ -37,14 +44,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
   matchedPairs: 0,
   moves: 0,
   level: 20,
+  gridSize: { rows: 3, cols: 4 },
   isChecking: false,
   gameStarted: false,
   gameCompleted: false,
 
   // Actions
-  initializeGame: (level: number) => {
+  initializeGame: (level: number, gridSize?: GridSize) => {
     const { generatePairs } = require('../lib/generatePairs')
-    const pairs = generatePairs(level)
+    const currentState = get()
+    const finalGridSize = gridSize || currentState.gridSize
+    
+    const totalCards = finalGridSize.rows * finalGridSize.cols
+    const pairsNeeded = totalCards / 2
+    
+    const pairs = generatePairs(level, pairsNeeded)
     
     const cards: Card[] = []
     let cardId = 0
@@ -75,6 +89,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       matchedPairs: 0,
       moves: 0,
       level,
+      gridSize: finalGridSize,
       isChecking: false,
       gameStarted: true,
       gameCompleted: false,
@@ -134,7 +149,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       )
     }
 
-    const gameCompleted = newMatchedPairs === 6 // 6 pairs in 3x4 grid
+    const totalPairs = (state.gridSize.rows * state.gridSize.cols) / 2
+    const gameCompleted = newMatchedPairs === totalPairs
 
     set({
       cards: newCards,
@@ -159,6 +175,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   setLevel: (level: number) => {
     set({ level })
+  },
+
+  setGridSize: (gridSize: GridSize) => {
+    set({ gridSize })
   },
 
   setGameCompleted: (completed: boolean) => {

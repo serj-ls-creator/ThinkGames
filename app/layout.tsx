@@ -1,7 +1,10 @@
 import './globals.css'
 import { Inter } from 'next/font/google'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ 
+  subsets: ['latin'],
+  variable: '--font-inter',
+})
 
 export const metadata = {
   title: 'ThinkGames - Освітні ігри для дітей',
@@ -14,11 +17,9 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="uk">
-      <body className={inter.className}>
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
-          {children}
-        </div>
+    <html lang="uk" className={inter.variable}>
+      <body className="font-rounded antialiased">
+        {children}
       </body>
     </html>
   )

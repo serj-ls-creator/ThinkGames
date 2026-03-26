@@ -9,7 +9,8 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ title, showProgress = false }) => {
-  const { matchedPairs } = useGameStore()
+  const { matchedPairs, gridSize } = useGameStore()
+  const totalPairs = (gridSize.rows * gridSize.cols) / 2
 
   return (
     <motion.div
@@ -29,7 +30,7 @@ export const Header: React.FC<HeaderProps> = ({ title, showProgress = false }) =
           transition={{ duration: 0.3, delay: 0.2 }}
           className="text-lg md:text-xl text-gray-600 font-medium"
         >
-          Знайдено: <span className="text-primary-600 font-bold">{matchedPairs}</span> / 6
+          Знайдено: <span className="text-primary-600 font-bold">{matchedPairs}</span> / {totalPairs}
         </motion.div>
       )}
     </motion.div>

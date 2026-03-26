@@ -44,11 +44,28 @@ const config: Config = {
           700: '#c2410c',
           800: '#9a3412',
           900: '#7c2d12',
+        },
+        lavender: {
+          50: '#EEE9FF',
+          100: '#E5D9FF',
+          200: '#D4BFFF',
+          300: '#C299FF',
+          400: '#B47DFF',
+          500: '#A855F7',
+          600: '#9333EA',
+          700: '#7C3AED',
+          800: '#6B21A8',
+          900: '#581C87',
         }
+      },
+      fontFamily: {
+        'rounded': ['Inter', 'Nunito', 'system-ui', 'sans-serif'],
       },
       animation: {
         'flip': 'flip 0.6s ease-in-out',
         'bounce-in': 'bounceIn 0.5s ease-out',
+        'slide-up': 'slideUp 0.3s ease-out',
+        'progress-fill': 'progressFill 1s ease-out',
       },
       keyframes: {
         flip: {
@@ -61,6 +78,14 @@ const config: Config = {
           '50%': { transform: 'scale(1.05)' },
           '70%': { transform: 'scale(0.9)' },
           '100%': { transform: 'scale(1)', opacity: '1' },
+        },
+        slideUp: {
+          '0%': { transform: 'translateY(20px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        progressFill: {
+          '0%': { width: '0%' },
+          '100%': { width: 'var(--progress-width)' },
         }
       }
     },
