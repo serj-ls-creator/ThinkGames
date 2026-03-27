@@ -6,17 +6,31 @@ const mathGames = [
   {
     id: 'pair-game',
     title: 'Знайди пару',
-    icon: '🃏',
+    icon: '🎏',
     href: '/math/pair-game',
-    color: 'purple' as const
+    color: 'purple' as const,
   },
   {
     id: 'connect-pairs',
     title: "З'єднай пару",
     icon: '🔗',
     href: '/math/connect-pairs',
-    color: 'purple' as const
-  }
+    color: 'purple' as const,
+  },
+  {
+    id: 'balloon-sweeper',
+    title: 'Кульковий сапер',
+    icon: '🎈',
+    href: '/math/balloon-sweeper',
+    color: 'purple' as const,
+  },
+  {
+    id: 'balance-scale',
+    title: 'Ваги рівноваги',
+    icon: '⚖️',
+    href: '/math/balance-scale',
+    color: 'purple' as const,
+  },
 ]
 
 export default function MathPage() {
