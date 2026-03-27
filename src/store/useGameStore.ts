@@ -25,7 +25,35 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const totalCards = finalGridSize.rows * finalGridSize.cols
     const pairsNeeded = totalCards / 2
     
-    const pairs = generatePairs(level, pairsNeeded)
+    let pairs = generatePairs(level, pairsNeeded)
+    
+    // Дополнительная проверка на дубликаты ответов
+    const answers = pairs.map((p: { question: string; answer: string }) => p.answer)
+    const uniqueAnswers = new Set(answers)
+    
+    // Если найдены дубликаты, генерируем заново
+    if (answers.length !== uniqueAnswers.size) {
+      console.warn('⚠️ Обнаружены дубликаты ответов, генерируем заново...')
+      pairs = generatePairs(level, pairsNeeded)
+      
+      // Повторная проверка
+      const newAnswers = pairs.map((p: { question: string; answer: string }) => p.answer)
+      const newUniqueAnswers = new Set(newAnswers)
+      if (newAnswers.length !== newUniqueAnswers.size) {
+        console.error('❌ Критическая ошибка: не удалось сгенерировать уникальные ответы')
+        // В крайнем случае, используем первые уникальные пары
+        const uniquePairs = []
+        const usedAnswers = new Set()
+        for (const pair of pairs) {
+          if (!usedAnswers.has(pair.answer)) {
+            uniquePairs.push(pair)
+            usedAnswers.add(pair.answer)
+          }
+          if (uniquePairs.length === pairsNeeded) break
+        }
+        pairs = uniquePairs
+      }
+    }
     
     const cards: Card[] = []
     let cardId = 0

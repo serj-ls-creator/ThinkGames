@@ -5,29 +5,26 @@ interface Pair {
 
 export const generatePairs = (level: number, pairsCount: number = 6): Pair[] => {
   const allPairs = []
+  const usedAnswers = new Set()
   
-  // Генерируем все возможные пары от 2×2 до 10×10 (включая 6×2, 4×3 и т.д.)
+  // Генерируем все возможные пары от 2×2 до 10×10, но исключаем дубликаты ответов
   for (let i = 2; i <= 10; i++) {
     for (let j = 2; j <= 10; j++) {
-      allPairs.push({ question: `${i} × ${j}`, answer: String(i * j) })
+      const answer = String(i * j)
+      
+      // Проверяем, не использован ли уже этот ответ
+      if (!usedAnswers.has(answer)) {
+        allPairs.push({ question: `${i} × ${j}`, answer })
+        usedAnswers.add(answer)
+      }
     }
   }
 
   // Перемешать
   allPairs.sort(() => Math.random() - 0.5)
 
-  // Выбрать только с уникальными ответами
-  const usedAnswers = new Set()
-  const result = []
-  for (const pair of allPairs) {
-    if (!usedAnswers.has(pair.answer)) {
-      usedAnswers.add(pair.answer)
-      result.push(pair)
-    }
-    if (result.length === pairsCount) break
-  }
-
-  return result
+  // Выбрать нужное количество пар
+  return allPairs.slice(0, pairsCount)
 }
 
 export const calculateScore = (moves: number, level: number, gridSize: { rows: number; cols: number }): number => {
