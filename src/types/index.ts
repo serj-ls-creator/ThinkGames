@@ -45,6 +45,7 @@ export interface Card {
   pairId: string
   isFlipped: boolean
   isMatched: boolean
+  isMismatched: boolean
 }
 
 export interface GridSize {

@@ -27,7 +27,7 @@ const subjects: SubjectCard[] = [
   {
     id: 'dutch',
     title: 'Нідерландська',
-    icon: '🇳🇱',
+    icon: '/flags/netherlands.svg',
     description: 'Вивчай нові слова та фрази',
     progress: 30,
     color: 'from-orange-500 to-orange-600',
@@ -36,7 +36,7 @@ const subjects: SubjectCard[] = [
   {
     id: 'ukrainian',
     title: 'Українська',
-    icon: '📖',
+    icon: '/flags/ukraine.svg',
     description: 'Покращуй свою мову',
     progress: 50,
     color: 'from-blue-500 to-blue-600',
@@ -107,7 +107,13 @@ export const HomePage: React.FC = () => {
                   <div className="p-5">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center space-x-3">
-                        <div className="text-3xl">{subject.icon}</div>
+                        <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white/70 ring-1 ring-black/5">
+                          {subject.icon.startsWith('/') ? (
+                            <img src={subject.icon} alt="" className="h-8 w-8 rounded-full object-cover" />
+                          ) : (
+                            <span className="text-3xl leading-none">{subject.icon}</span>
+                          )}
+                        </div>
                         <div>
                           <h3 className="text-lg font-bold text-gray-800">
                             {subject.title}

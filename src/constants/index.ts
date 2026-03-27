@@ -14,7 +14,7 @@ export const SECTIONS: Section[] = [
   {
     id: 'dutch',
     title: 'Нідерландська',
-    icon: '🇳🇱',
+    icon: '/flags/netherlands.svg',
     description: 'Вивчай нові слова та фрази',
     color: 'from-orange-500 to-orange-600',
     route: '/dutch',
@@ -23,7 +23,7 @@ export const SECTIONS: Section[] = [
   {
     id: 'ukrainian',
     title: 'Українська',
-    icon: '📖',
+    icon: '/flags/ukraine.svg',
     description: 'Покращуй свою мову',
     color: 'from-blue-500 to-blue-600',
     route: '/ukrainian',
@@ -78,6 +78,7 @@ export const UKRAINIAN_GAMES: GameCard[] = [] // Пока нет игр
 // Маршруты приложения
 export const ROUTES = {
   HOME: '/',
+  PROFILE: '/profile',
   MATH: {
     INDEX: '/math',
     FIND_PAIR: {
@@ -196,5 +197,5 @@ export const NAV_ITEMS = [
   { id: 'home', label: 'Головна', icon: '🏠', href: ROUTES.HOME },
   { id: 'games', label: 'Ігри', icon: '🎮', href: ROUTES.MATH.INDEX },
   { id: 'progress', label: 'Прогрес', icon: '📊', href: ROUTES.HOME },
-  { id: 'settings', label: 'Налаштування', icon: '⚙️', href: ROUTES.HOME },
+  { id: 'settings', label: 'Профіль', icon: '👤', href: ROUTES.PROFILE },
 ] as const

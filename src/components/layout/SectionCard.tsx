@@ -13,6 +13,8 @@ export const SectionCard: React.FC<SectionCardProps> = ({
   href,
   games = []
 }) => {
+  const isImageIcon = icon.startsWith('/')
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -27,7 +29,13 @@ export const SectionCard: React.FC<SectionCardProps> = ({
           <div className="p-5">
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center space-x-3">
-                <div className="text-3xl">{icon}</div>
+                <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white/70 ring-1 ring-black/5">
+                  {isImageIcon ? (
+                    <img src={icon} alt="" className="h-8 w-8 rounded-full object-cover" />
+                  ) : (
+                    <span className="text-3xl leading-none">{icon}</span>
+                  )}
+                </div>
                 <div>
                   <h3 className="text-lg font-bold text-gray-800">{title}</h3>
                   <p className="text-sm text-gray-600 mt-1">{description}</p>

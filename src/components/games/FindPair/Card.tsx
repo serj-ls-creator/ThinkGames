@@ -10,39 +10,57 @@ interface CardProps {
 }
 
 export const Card: React.FC<CardProps> = ({ card, onClick, disabled }) => {
+  const isFaceUp = card.isFlipped || card.isMatched
+
   return (
     <motion.div
-      className="relative aspect-square min-w-0 overflow-hidden"
+      className="relative aspect-square min-w-0 overflow-visible"
       style={{ minWidth: '60px' }}
-      whileHover={!disabled && !card.isFlipped ? { scale: 1.05 } : {}}
-      whileTap={!disabled && !card.isFlipped ? { scale: 0.95 } : {}}
+      whileHover={!disabled && !isFaceUp ? { scale: 1.04, y: -2 } : {}}
+      whileTap={!disabled && !isFaceUp ? { scale: 0.97 } : {}}
     >
       <div
-        onClick={() => !disabled && !card.isFlipped && onClick()}
-        className={`
-          absolute inset-0 rounded-xl cursor-pointer transition-all duration-300 transform-gpu
-          ${card.isFlipped || card.isMatched 
-            ? 'bg-white border-2 border-gray-300' 
-            : 'bg-gradient-to-br from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600'
-          }
-          ${card.isMatched ? 'opacity-60 cursor-default' : ''}
-          ${disabled ? 'cursor-not-allowed' : ''}
-        `}
+        className="relative h-full w-full"
+        style={{ perspective: '1200px' }}
       >
-        <div className="absolute inset-0 flex items-center justify-center p-2 overflow-hidden">
-          {card.isFlipped || card.isMatched ? (
-            <motion.div
-              initial={{ rotateY: 180, opacity: 0 }}
-              animate={{ rotateY: 0, opacity: 1 }}
-              transition={{ duration: 0.3 }}
-              className="text-lg font-bold text-gray-800 text-center truncate"
-            >
+        <motion.button
+          type="button"
+          onClick={() => !disabled && !isFaceUp && onClick()}
+          animate={{ rotateY: isFaceUp ? 180 : 0 }}
+          transition={{ duration: 0.16, ease: 'linear' }}
+          className={`
+            relative h-full w-full rounded-xl text-left transform-gpu [transform-style:preserve-3d]
+            ${card.isMatched ? 'cursor-default opacity-70' : ''}
+            ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}
+          `}
+        >
+          <div
+            className={`
+              absolute inset-0 flex items-center justify-center overflow-hidden rounded-xl border shadow-[0_10px_25px_rgba(76,29,149,0.14)] [backface-visibility:hidden]
+              ${card.isMismatched
+                ? 'border-red-400 bg-red-50 ring-2 ring-red-200'
+                : 'border-white/60 bg-gradient-to-br from-primary-500 via-primary-500 to-secondary-500'}
+            `}
+          >
+            <div className="absolute inset-x-3 top-2 h-6 rounded-full bg-white/20 blur-md" />
+            <span className="text-2xl font-semibold text-white drop-shadow-sm">?</span>
+          </div>
+
+          <div
+            className={`
+              absolute inset-0 flex items-center justify-center overflow-hidden rounded-xl border bg-white px-2 text-center shadow-[0_14px_30px_rgba(15,23,42,0.12)] [backface-visibility:hidden] [transform:rotateY(180deg)]
+              ${card.isMatched
+                ? 'border-emerald-300 bg-emerald-50'
+                : card.isMismatched
+                ? 'border-red-400 bg-red-50 ring-2 ring-red-200'
+                : 'border-slate-200'}
+            `}
+          >
+            <div className="text-sm font-bold leading-tight text-slate-800 sm:text-base md:text-lg">
               {card.content}
-            </motion.div>
-          ) : (
-            <div className="text-2xl text-white">?</div>
-          )}
-        </div>
+            </div>
+          </div>
+        </motion.button>
       </div>
     </motion.div>
   )

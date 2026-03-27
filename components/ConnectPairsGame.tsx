@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { addPoints } from '../src/lib/points'
 
 interface PairItem {
   left: string
@@ -85,6 +86,7 @@ export const ConnectPairsGame: React.FC<ConnectPairsGameProps> = ({ items, title
       if (leftCard && leftCard.pairId === card.pairId) {
         // Correct match
         setTimeout(() => {
+          addPoints(1)
           setCards(prev => prev.map(c => 
             (c.id === selectedLeft || c.id === cardId)
               ? { ...c, isSelected: false, isMatched: true }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { WordPair } from '../../../types'
+import { addPoints } from '../../../lib/points'
 
 interface ConnectPairGameProps {
   items: WordPair[]
@@ -81,6 +82,7 @@ export const ConnectPairGame: React.FC<ConnectPairGameProps> = ({ items, title }
       if (leftCard && leftCard.pairId === card.pairId) {
         // Correct match
         setTimeout(() => {
+          addPoints(1)
           setCards(prev => prev.map(c => 
             (c.id === selectedLeft || c.id === cardId)
               ? { ...c, isSelected: false, isMatched: true }

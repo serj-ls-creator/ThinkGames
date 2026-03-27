@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { addPoints } from '../lib/points'
 
 export interface Card {
   id: string
@@ -6,6 +7,7 @@ export interface Card {
   pairId: string
   isFlipped: boolean
   isMatched: boolean
+  isMismatched: boolean
 }
 
 export interface GridSize {
@@ -70,6 +72,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         pairId: `pair-${pairIndex}`,
         isFlipped: false,
         isMatched: false,
+        isMismatched: false,
       })
       cards.push({
         id: `card-${cardId++}`,
@@ -77,6 +80,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         pairId: `pair-${pairIndex}`,
         isFlipped: false,
         isMatched: false,
+        isMismatched: false,
       })
     })
 
@@ -116,11 +120,25 @@ export const useGameStore = create<GameStore>((set, get) => ({
     })
 
     if (newSelectedCards.length === 2) {
-      set({ isChecking: true, moves: state.moves + 1 })
+      const [firstId, secondId] = newSelectedCards
+      const firstSelectedCard = newCards.find(c => c.id === firstId)
+      const secondSelectedCard = newCards.find(c => c.id === secondId)
+      const isMatch = firstSelectedCard?.pairId === secondSelectedCard?.pairId
+
+      set({
+        cards: isMatch
+          ? newCards
+          : newCards.map(c =>
+              c.id === firstId || c.id === secondId ? { ...c, isMismatched: true } : c
+            ),
+        selectedCards: newSelectedCards,
+        isChecking: true,
+        moves: state.moves + 1,
+      })
       
       setTimeout(() => {
         get().checkMatch()
-      }, 1000)
+      }, 2000)
     }
   },
 
@@ -139,13 +157,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
     let newMatchedPairs = state.matchedPairs
 
     if (isMatch) {
+      addPoints(1)
       newCards = state.cards.map(c =>
-        c.pairId === firstCard.pairId ? { ...c, isMatched: true } : c
+        c.pairId === firstCard.pairId ? { ...c, isMatched: true, isMismatched: false } : c
       )
       newMatchedPairs = state.matchedPairs + 1
     } else {
       newCards = state.cards.map(c =>
-        c.id === firstId || c.id === secondId ? { ...c, isFlipped: false } : c
+        c.id === firstId || c.id === secondId
+          ? { ...c, isFlipped: false, isMismatched: false }
+          : c
       )
     }
 
