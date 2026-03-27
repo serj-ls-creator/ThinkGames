@@ -1,48 +1,50 @@
-interface Pair {
+import { mathPairsData } from '../src/data/mathPairs'
+
+export interface Pair {
   question: string
   answer: string
 }
 
+const shuffle = <T,>(items: T[]): T[] => {
+  const copy = [...items]
+
+  for (let index = copy.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1))
+    ;[copy[index], copy[randomIndex]] = [copy[randomIndex], copy[index]]
+  }
+
+  return copy
+}
+
 export const generatePairs = (level: number, pairsCount: number = 6): Pair[] => {
-  const pairs: Pair[] = []
-  const usedNumbers = new Set<string>()
+  const availableAnswers = Object.keys(mathPairsData)
+    .map(Number)
+    .filter(answer => answer <= level)
 
-  const getRange = (level: number) => {
-    if (level <= 20) {
-      return { min: 1, max: 10 }
-    } else if (level <= 50) {
-      return { min: 2, max: 12 }
-    } else {
-      return { min: 3, max: 15 }
-    }
+  if (availableAnswers.length < pairsCount) {
+    throw new Error(
+      `Недостатньо унікальних відповідей для рівня ${level}. Потрібно ${pairsCount}, доступно ${availableAnswers.length}.`
+    )
   }
 
-  const { min, max } = getRange(level)
+  const selectedAnswers = shuffle(availableAnswers).slice(0, pairsCount)
 
-  while (pairs.length < pairsCount) {
-    const a = Math.floor(Math.random() * (max - min + 1)) + min
-    const b = Math.floor(Math.random() * (max - min + 1)) + min
-    const result = a * b
-    const pairKey = `${a}×${b}`
+  return selectedAnswers.map(answer => {
+    const examples = mathPairsData[answer]
+    const question = examples[Math.floor(Math.random() * examples.length)]
 
-    // Исключаем умножения на 1
-    if (!usedNumbers.has(pairKey) && result <= level && a !== 1 && b !== 1) {
-      usedNumbers.add(pairKey)
-      pairs.push({
-        question: `${a} × ${b}`,
-        answer: result.toString(),
-      })
+    return {
+      question,
+      answer: String(answer),
     }
-  }
-
-  return pairs
+  })
 }
 
 export const calculateScore = (moves: number, level: number, gridSize: { rows: number; cols: number }): number => {
   const baseScore = 1000
   const movesPenalty = moves * 10
   const levelBonus = level * 10
-  const gridSizeBonus = (gridSize.rows * gridSize.cols) * 5 // Больше очков за большие поля
-  
+  const gridSizeBonus = gridSize.rows * gridSize.cols * 5
+
   return Math.max(0, baseScore - movesPenalty + levelBonus + gridSizeBonus)
 }

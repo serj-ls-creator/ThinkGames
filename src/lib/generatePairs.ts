@@ -1,37 +1,50 @@
-interface Pair {
+import { mathPairsData } from '../data/mathPairs'
+
+export interface Pair {
   question: string
   answer: string
 }
 
-export const generatePairs = (level: number, pairsCount: number = 6): Pair[] => {
-  const allPairs = []
-  const usedAnswers = new Set()
-  
-  // Генерируем все возможные пары от 2×2 до 10×10, но исключаем дубликаты ответов
-  for (let i = 2; i <= 10; i++) {
-    for (let j = 2; j <= 10; j++) {
-      const answer = String(i * j)
-      
-      // Проверяем, не использован ли уже этот ответ
-      if (!usedAnswers.has(answer)) {
-        allPairs.push({ question: `${i} × ${j}`, answer })
-        usedAnswers.add(answer)
-      }
-    }
+const shuffle = <T,>(items: T[]): T[] => {
+  const copy = [...items]
+
+  for (let index = copy.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1))
+    ;[copy[index], copy[randomIndex]] = [copy[randomIndex], copy[index]]
   }
 
-  // Перемешать
-  allPairs.sort(() => Math.random() - 0.5)
+  return copy
+}
 
-  // Выбрать нужное количество пар
-  return allPairs.slice(0, pairsCount)
+export const generatePairs = (level: number, pairsCount: number = 6): Pair[] => {
+  const availableAnswers = Object.keys(mathPairsData)
+    .map(Number)
+    .filter(answer => answer <= level)
+
+  if (availableAnswers.length < pairsCount) {
+    throw new Error(
+      `Недостатньо унікальних відповідей для рівня ${level}. Потрібно ${pairsCount}, доступно ${availableAnswers.length}.`
+    )
+  }
+
+  const selectedAnswers = shuffle(availableAnswers).slice(0, pairsCount)
+
+  return selectedAnswers.map(answer => {
+    const examples = mathPairsData[answer]
+    const question = examples[Math.floor(Math.random() * examples.length)]
+
+    return {
+      question,
+      answer: String(answer),
+    }
+  })
 }
 
 export const calculateScore = (moves: number, level: number, gridSize: { rows: number; cols: number }): number => {
   const baseScore = 1000
   const movesPenalty = moves * 10
   const levelBonus = level * 10
-  const gridSizeBonus = (gridSize.rows * gridSize.cols) * 5 // Больше очков за большие поля
-  
+  const gridSizeBonus = gridSize.rows * gridSize.cols * 5
+
   return Math.max(0, baseScore - movesPenalty + levelBonus + gridSizeBonus)
 }

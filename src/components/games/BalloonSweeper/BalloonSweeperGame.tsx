@@ -177,15 +177,14 @@ export const BalloonSweeperGame: React.FC<BalloonSweeperGameProps> = ({ difficul
         >
           <Link
             href="/math/balloon-sweeper"
-            className="mb-5 inline-flex items-center rounded-full bg-white/90 px-4 py-2 text-sm font-medium text-slate-600 shadow-md transition-colors hover:text-sky-600"
+            className="mb-5 inline-flex items-center rounded-full bg-white/95 px-4 py-2 text-sm font-medium text-slate-700 shadow-md transition-colors hover:text-sky-700"
           >
             ← Назад до рівнів
           </Link>
 
-          <h1 className="mb-2 text-3xl font-bold text-slate-800 sm:text-4xl">Кульковий сапер</h1>
-          <p className="text-sm text-slate-600 sm:text-base">
-            {difficulty.label} рівень • {difficulty.rows} × {difficulty.cols} • {difficulty.mines}{' '}
-            небезпечних кульок
+          <h1 className="mb-2 text-3xl font-bold text-slate-900 sm:text-4xl">Кульковий сапер</h1>
+          <p className="text-sm text-slate-700 sm:text-base">
+            {difficulty.label} рівень • {difficulty.rows} × {difficulty.cols} • {difficulty.mines} небезпечних кульок
           </p>
         </motion.div>
 
@@ -193,30 +192,30 @@ export const BalloonSweeperGame: React.FC<BalloonSweeperGameProps> = ({ difficul
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, delay: 0.05 }}
-          className={`mb-5 rounded-3xl bg-gradient-to-r p-5 text-white shadow-xl ${statusCard.color}`}
+          className={`mb-5 rounded-3xl bg-gradient-to-r p-5 text-slate-950 shadow-xl ${statusCard.color}`}
         >
           <div className="mb-4 flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-lg font-bold">{statusCard.title}</h2>
-              <p className="mt-1 text-sm text-white/90">{statusCard.text}</p>
+              <h2 className="text-lg font-extrabold" style={{ color: '#0f172a' }}>{statusCard.title}</h2>
+              <p className="mt-1 text-sm font-medium" style={{ color: '#1e293b' }}>{statusCard.text}</p>
             </div>
             <div className="text-4xl">{status === 'won' ? '🏆' : status === 'lost' ? '🎈' : '🫧'}</div>
           </div>
 
           <div className="grid grid-cols-3 gap-3 text-center">
-            <div className="rounded-2xl bg-white/20 px-3 py-3 backdrop-blur-sm">
-              <div className="text-xs uppercase tracking-wide text-white/80">Ходи</div>
-              <div className="mt-1 text-xl font-bold">{moves}</div>
+            <div className="rounded-2xl bg-white/90 px-3 py-3 shadow-sm">
+              <div className="text-xs uppercase tracking-wide" style={{ color: '#475569' }}>Ходи</div>
+              <div className="mt-1 text-xl font-bold" style={{ color: '#0f172a' }}>{moves}</div>
             </div>
-            <div className="rounded-2xl bg-white/20 px-3 py-3 backdrop-blur-sm">
-              <div className="text-xs uppercase tracking-wide text-white/80">Прапорці</div>
-              <div className="mt-1 text-xl font-bold">
+            <div className="rounded-2xl bg-white/90 px-3 py-3 shadow-sm">
+              <div className="text-xs uppercase tracking-wide" style={{ color: '#475569' }}>Прапорці</div>
+              <div className="mt-1 text-xl font-bold" style={{ color: '#0f172a' }}>
                 {flaggedCount}/{difficulty.mines}
               </div>
             </div>
-            <div className="rounded-2xl bg-white/20 px-3 py-3 backdrop-blur-sm">
-              <div className="text-xs uppercase tracking-wide text-white/80">Залишилось</div>
-              <div className="mt-1 text-xl font-bold">{hiddenSafeCells}</div>
+            <div className="rounded-2xl bg-white/90 px-3 py-3 shadow-sm">
+              <div className="text-xs uppercase tracking-wide" style={{ color: '#475569' }}>Залишилось</div>
+              <div className="mt-1 text-xl font-bold" style={{ color: '#0f172a' }}>{hiddenSafeCells}</div>
             </div>
           </div>
         </motion.div>
@@ -225,17 +224,17 @@ export const BalloonSweeperGame: React.FC<BalloonSweeperGameProps> = ({ difficul
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, delay: 0.1 }}
-          className="mb-5 rounded-3xl bg-white/90 p-4 shadow-lg"
+          className="mb-5 rounded-3xl border border-slate-200 bg-white/95 p-4 shadow-lg"
         >
           <div className="mb-3 flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-base font-semibold text-slate-800">Режим натискання</h2>
-              <p className="text-sm text-slate-500">На телефоні це замінює праву кнопку миші.</p>
+              <h2 className="text-base font-bold" style={{ color: '#0f172a' }}>Режим натискання</h2>
+              <p className="text-sm" style={{ color: '#334155' }}>На телефоні це замінює праву кнопку миші.</p>
             </div>
             <button
               type="button"
               onClick={resetGame}
-              className="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-200"
+              className="rounded-full border border-slate-300 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-200"
             >
               Почати знову
             </button>
@@ -245,22 +244,42 @@ export const BalloonSweeperGame: React.FC<BalloonSweeperGameProps> = ({ difficul
             <button
               type="button"
               onClick={() => setMode('open')}
-              className={`rounded-2xl px-4 py-3 text-sm font-semibold transition-all ${
+              className="rounded-2xl border px-4 py-3 text-sm font-semibold transition-all"
+              style={
                 mode === 'open'
-                  ? 'bg-sky-500 text-white shadow-lg shadow-sky-200'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              }`}
+                  ? {
+                      backgroundColor: '#0ea5e9',
+                      borderColor: '#0ea5e9',
+                      color: '#ffffff',
+                      boxShadow: '0 10px 24px rgba(14, 165, 233, 0.28)',
+                    }
+                  : {
+                      backgroundColor: '#e2e8f0',
+                      borderColor: '#cbd5e1',
+                      color: '#0f172a',
+                    }
+              }
             >
               Відкривати
             </button>
             <button
               type="button"
               onClick={() => setMode('flag')}
-              className={`rounded-2xl px-4 py-3 text-sm font-semibold transition-all ${
+              className="rounded-2xl border px-4 py-3 text-sm font-semibold transition-all"
+              style={
                 mode === 'flag'
-                  ? 'bg-amber-500 text-white shadow-lg shadow-amber-200'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              }`}
+                  ? {
+                      backgroundColor: '#f59e0b',
+                      borderColor: '#f59e0b',
+                      color: '#ffffff',
+                      boxShadow: '0 10px 24px rgba(245, 158, 11, 0.28)',
+                    }
+                  : {
+                      backgroundColor: '#e2e8f0',
+                      borderColor: '#cbd5e1',
+                      color: '#0f172a',
+                    }
+              }
             >
               Прапорець
             </button>

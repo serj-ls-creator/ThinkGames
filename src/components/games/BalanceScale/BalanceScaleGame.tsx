@@ -63,7 +63,7 @@ export const BalanceScaleGame: React.FC<BalanceScaleGameProps> = ({ maxValue }) 
   const cupTravel = isBalanced ? 0 : 10 + tiltStrength * 22
   const leftCupOffset = isBalanced ? 0 : difference > 0 ? cupTravel : -cupTravel
   const rightCupOffset = isBalanced ? 0 : difference > 0 ? -cupTravel : cupTravel
-  const leftWeightTop = 20
+  const leftWeightTop = 8
   const rightWeightTop = 50
 
   useEffect(() => {
@@ -181,10 +181,10 @@ export const BalanceScaleGame: React.FC<BalanceScaleGameProps> = ({ maxValue }) 
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              className="absolute left-1/2 top-3 z-20 w-[min(92%,340px)] -translate-x-1/2 rounded-[1.4rem] border border-emerald-200 bg-emerald-50 p-4 text-center shadow-lg"
+              className="absolute left-1/2 top-3 z-20 w-[min(92%,340px)] -translate-x-1/2 rounded-[1.4rem] border-2 border-emerald-400 bg-white p-4 text-center shadow-xl"
             >
               <h2 className="text-2xl font-black text-emerald-700">Вітаємо!</h2>
-              <p className="mt-1 text-sm text-emerald-900 sm:text-base">Ти правильно зрівняв ваги.</p>
+              <p className="mt-1 text-sm font-medium text-slate-800 sm:text-base">Ти правильно зрівняв ваги.</p>
               <button
                 type="button"
                 onClick={handleNextRound}

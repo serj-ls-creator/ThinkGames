@@ -138,7 +138,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       
       setTimeout(() => {
         get().checkMatch()
-      }, 2000)
+      }, 1000)
     }
   },
 

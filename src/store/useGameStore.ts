@@ -5,7 +5,6 @@ import { addPoints } from '../lib/points'
 export type GameStore = GameState & GameActions
 
 export const useGameStore = create<GameStore>((set, get) => ({
-  // Initial state
   cards: [],
   selectedCards: [],
   matchedPairs: 0,
@@ -16,45 +15,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
   gameStarted: false,
   gameCompleted: false,
 
-  // Actions
   initializeGame: (level: number, gridSize?: GridSize) => {
     const { generatePairs } = require('../lib/generatePairs')
     const currentState = get()
     const finalGridSize = gridSize || currentState.gridSize
-    
     const totalCards = finalGridSize.rows * finalGridSize.cols
     const pairsNeeded = totalCards / 2
-    
-    let pairs = generatePairs(level, pairsNeeded)
-    
-    // Дополнительная проверка на дубликаты ответов
-    const answers = pairs.map((p: { question: string; answer: string }) => p.answer)
-    const uniqueAnswers = new Set(answers)
-    
-    // Если найдены дубликаты, генерируем заново
-    if (answers.length !== uniqueAnswers.size) {
-      console.warn('⚠️ Обнаружены дубликаты ответов, генерируем заново...')
-      pairs = generatePairs(level, pairsNeeded)
-      
-      // Повторная проверка
-      const newAnswers = pairs.map((p: { question: string; answer: string }) => p.answer)
-      const newUniqueAnswers = new Set(newAnswers)
-      if (newAnswers.length !== newUniqueAnswers.size) {
-        console.error('❌ Критическая ошибка: не удалось сгенерировать уникальные ответы')
-        // В крайнем случае, используем первые уникальные пары
-        const uniquePairs = []
-        const usedAnswers = new Set()
-        for (const pair of pairs) {
-          if (!usedAnswers.has(pair.answer)) {
-            uniquePairs.push(pair)
-            usedAnswers.add(pair.answer)
-          }
-          if (uniquePairs.length === pairsNeeded) break
-        }
-        pairs = uniquePairs
-      }
-    }
-    
+    const pairs = generatePairs(level, pairsNeeded)
+
     const cards: Card[] = []
     let cardId = 0
 
@@ -67,6 +35,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         isMatched: false,
         isMismatched: false,
       })
+
       cards.push({
         id: `card-${cardId++}`,
         content: pair.answer,
@@ -77,7 +46,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
       })
     })
 
-    // Shuffle cards
     const shuffledCards = cards.sort(() => Math.random() - 0.5)
 
     set({
@@ -95,9 +63,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   flipCard: (cardId: string) => {
     const state = get()
-    
+
     if (state.isChecking || state.gameCompleted) return
-    
+
     const card = state.cards.find(c => c.id === cardId)
     if (!card || card.isFlipped || card.isMatched) return
 
@@ -128,17 +96,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
         isChecking: true,
         moves: state.moves + 1,
       })
-      
+
       setTimeout(() => {
         get().checkMatch()
-      }, 2000)
+      }, 1000)
     }
   },
 
   checkMatch: () => {
     const state = get()
     const [firstId, secondId] = state.selectedCards
-    
+
     const firstCard = state.cards.find(c => c.id === firstId)
     const secondCard = state.cards.find(c => c.id === secondId)
 
