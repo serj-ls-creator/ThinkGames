@@ -135,10 +135,10 @@ export const ConnectPairGame: React.FC<ConnectPairGameProps> = ({ items, title }
         </motion.div>
 
         {/* Game Board */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <div className="grid grid-cols-2 gap-2 md:gap-8 mb-8 h-full">
           {/* Left Column */}
-          <div className="space-y-3">
-            <h2 className="text-xl font-semibold text-gray-700 mb-4 text-center">Ліва колонка</h2>
+          <div className="space-y-2 md:space-y-3">
+            <h2 className="text-lg md:text-xl font-semibold text-gray-700 mb-2 md:mb-4 text-center">Ліва колонка</h2>
             {leftCards.map((card, index) => (
               <motion.div
                 key={card.id}
@@ -151,7 +151,7 @@ export const ConnectPairGame: React.FC<ConnectPairGameProps> = ({ items, title }
                 <button
                   onClick={() => handleCardClick(card.id)}
                   className={`
-                    w-full p-4 rounded-2xl shadow-md transition-all duration-300 text-center font-medium
+                    w-full p-2 md:p-4 rounded-xl md:rounded-2xl shadow-sm md:shadow-md transition-all duration-300 text-center font-medium text-sm md:text-base
                     ${card.isMatched 
                       ? 'bg-green-100 text-green-800 line-through opacity-75' 
                       : card.isError
@@ -170,8 +170,8 @@ export const ConnectPairGame: React.FC<ConnectPairGameProps> = ({ items, title }
           </div>
 
           {/* Right Column */}
-          <div className="space-y-3">
-            <h2 className="text-xl font-semibold text-gray-700 mb-4 text-center">Права колонка</h2>
+          <div className="space-y-2 md:space-y-3">
+            <h2 className="text-lg md:text-xl font-semibold text-gray-700 mb-2 md:mb-4 text-center">Права колонка</h2>
             {rightCards.map((card, index) => (
               <motion.div
                 key={card.id}
@@ -184,7 +184,7 @@ export const ConnectPairGame: React.FC<ConnectPairGameProps> = ({ items, title }
                 <button
                   onClick={() => handleCardClick(card.id)}
                   className={`
-                    w-full p-4 rounded-2xl shadow-md transition-all duration-300 text-center font-medium
+                    w-full p-2 md:p-4 rounded-xl md:rounded-2xl shadow-sm md:shadow-md transition-all duration-300 text-center font-medium text-sm md:text-base
                     ${card.isMatched 
                       ? 'bg-green-100 text-green-800 line-through opacity-75' 
                       : card.isError
