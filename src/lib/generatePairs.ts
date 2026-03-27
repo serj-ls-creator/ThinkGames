@@ -4,38 +4,30 @@ interface Pair {
 }
 
 export const generatePairs = (level: number, pairsCount: number = 6): Pair[] => {
-  const pairs: Pair[] = []
-  const usedNumbers = new Set<string>()
-
-  const getRange = (level: number) => {
-    if (level <= 20) {
-      return { min: 1, max: 10 }
-    } else if (level <= 50) {
-      return { min: 2, max: 12 }
-    } else {
-      return { min: 3, max: 15 }
+  const allPairs = []
+  
+  // Генерируем все возможные пары от 2×2 до 10×10 (включая 6×2, 4×3 и т.д.)
+  for (let i = 2; i <= 10; i++) {
+    for (let j = 2; j <= 10; j++) {
+      allPairs.push({ question: `${i} × ${j}`, answer: String(i * j) })
     }
   }
 
-  const { min, max } = getRange(level)
+  // Перемешать
+  allPairs.sort(() => Math.random() - 0.5)
 
-  while (pairs.length < pairsCount) {
-    const a = Math.floor(Math.random() * (max - min + 1)) + min
-    const b = Math.floor(Math.random() * (max - min + 1)) + min
-    const result = a * b
-    const pairKey = `${a}×${b}`
-
-    // Исключаем умножения на 1
-    if (!usedNumbers.has(pairKey) && result <= level && a !== 1 && b !== 1) {
-      usedNumbers.add(pairKey)
-      pairs.push({
-        question: `${a} × ${b}`,
-        answer: result.toString(),
-      })
+  // Выбрать только с уникальными ответами
+  const usedAnswers = new Set()
+  const result = []
+  for (const pair of allPairs) {
+    if (!usedAnswers.has(pair.answer)) {
+      usedAnswers.add(pair.answer)
+      result.push(pair)
     }
+    if (result.length === pairsCount) break
   }
 
-  return pairs
+  return result
 }
 
 export const calculateScore = (moves: number, level: number, gridSize: { rows: number; cols: number }): number => {

@@ -1,6 +1,11 @@
 {
-  "/page": "app/page.js",
-  "/math/page": "app/math/page.js",
   "/math/pair-game/page": "app/math/pair-game/page.js",
-  "/math/pair-game/play/page": "app/math/pair-game/play/page.js"
+  "/math/page": "app/math/page.js",
+  "/math/pair-game/play/page": "app/math/pair-game/play/page.js",
+  "/math/connect-pairs/page": "app/math/connect-pairs/page.js",
+  "/math/connect-pairs/[level]/page": "app/math/connect-pairs/[level]/page.js",
+  "/page": "app/page.js",
+  "/dutch/page": "app/dutch/page.js",
+  "/dutch/connect-pairs/page": "app/dutch/connect-pairs/page.js",
+  "/dutch/connect-pairs/[level]/page": "app/dutch/connect-pairs/[level]/page.js"
 }
