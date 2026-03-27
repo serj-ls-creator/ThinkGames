@@ -68,7 +68,7 @@ export const SubjectPage: React.FC<SubjectPageProps> = ({
         </motion.div>
 
         {/* Games Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+        <div className="mb-12 grid grid-cols-2 gap-3 md:gap-6">
           {games.map((game, index) => (
             <motion.div
               key={game.id}
@@ -80,17 +80,17 @@ export const SubjectPage: React.FC<SubjectPageProps> = ({
             >
               <Link
                 href={game.href}
-                className={`block p-8 bg-gradient-to-br ${theme.bg} ${theme.hover} rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 group`}
+                className={`group block rounded-2xl bg-gradient-to-br p-4 shadow-lg transition-all duration-300 hover:shadow-xl sm:p-6 md:p-8 ${theme.bg} ${theme.hover}`}
               >
-                <div className={`w-16 h-16 ${theme.iconBg} rounded-2xl flex items-center justify-center text-3xl mb-4 mx-auto group-hover:scale-110 transition-transform duration-300`}>
+                <div className={`mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl text-2xl transition-transform duration-300 group-hover:scale-110 sm:mb-4 sm:h-14 sm:w-14 sm:text-3xl ${theme.iconBg}`}>
                   {game.icon}
                 </div>
                 
-                <h3 className={`text-xl font-bold ${theme.text} mb-2 text-center`}>
+                <h3 className={`mb-1 text-center text-base font-bold ${theme.text} sm:mb-2 sm:text-lg md:text-xl`}>
                   {game.title}
                 </h3>
                 
-                <div className={`text-sm ${theme.text} opacity-75 text-center`}>
+                <div className={`text-center text-xs opacity-75 ${theme.text} sm:text-sm`}>
                   Натисніть щоб почати гру
                 </div>
               </Link>

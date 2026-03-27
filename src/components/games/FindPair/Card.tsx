@@ -12,7 +12,8 @@ interface CardProps {
 export const Card: React.FC<CardProps> = ({ card, onClick, disabled }) => {
   return (
     <motion.div
-      className="relative aspect-square"
+      className="relative aspect-square min-w-0 overflow-hidden"
+      style={{ minWidth: '60px' }}
       whileHover={!disabled && !card.isFlipped ? { scale: 1.05 } : {}}
       whileTap={!disabled && !card.isFlipped ? { scale: 0.95 } : {}}
     >
@@ -28,18 +29,18 @@ export const Card: React.FC<CardProps> = ({ card, onClick, disabled }) => {
           ${disabled ? 'cursor-not-allowed' : ''}
         `}
       >
-        <div className="absolute inset-0 flex items-center justify-center p-2 md:p-4">
+        <div className="absolute inset-0 flex items-center justify-center p-2 overflow-hidden">
           {card.isFlipped || card.isMatched ? (
             <motion.div
               initial={{ rotateY: 180, opacity: 0 }}
               animate={{ rotateY: 0, opacity: 1 }}
               transition={{ duration: 0.3 }}
-              className="text-lg md:text-3xl font-bold text-gray-800 text-center"
+              className="text-lg font-bold text-gray-800 text-center truncate"
             >
               {card.content}
             </motion.div>
           ) : (
-            <div className="text-2xl md:text-5xl text-white">?</div>
+            <div className="text-2xl text-white">?</div>
           )}
         </div>
       </div>

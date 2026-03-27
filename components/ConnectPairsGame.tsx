@@ -119,28 +119,28 @@ export const ConnectPairsGame: React.FC<ConnectPairsGameProps> = ({ items, title
   const rightCards = cards.filter(c => c.side === 'right')
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#EEE9FF] via-[#F5F0FF] to-[#FAF5FF] px-4 py-8">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-[#EEE9FF] via-[#F5F0FF] to-[#FAF5FF] px-3 py-4 sm:px-4 sm:py-6">
+      <div className="mx-auto max-w-5xl">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-8"
+          className="mb-5 text-center sm:mb-7"
         >
-          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent mb-4">
+          <h1 className="mb-2 bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-2xl font-bold leading-tight text-transparent sm:mb-3 sm:text-3xl md:text-4xl">
             {title}
           </h1>
           
-          <div className="text-lg md:text-xl text-gray-600 font-medium">
+          <div className="text-sm font-medium text-gray-600 sm:text-base md:text-lg">
             Знайдено: <span className="text-primary-600 font-bold">{matchedPairs}</span> / {items.length}
           </div>
         </motion.div>
 
         {/* Game Board */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 md:gap-6">
           {/* Left Column */}
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             <h2 className="text-xl font-semibold text-gray-700 mb-4 text-center">Ліва колонка</h2>
             {leftCards.map((card, index) => (
               <motion.div
@@ -154,7 +154,7 @@ export const ConnectPairsGame: React.FC<ConnectPairsGameProps> = ({ items, title
                 <button
                   onClick={() => handleCardClick(card.id)}
                   className={`
-                    w-full p-4 rounded-2xl shadow-md transition-all duration-300 text-center font-medium
+                    min-h-[3.25rem] w-full rounded-xl px-2 py-3 text-center text-sm font-medium leading-snug shadow-md transition-all duration-300 sm:min-h-[3.75rem] sm:rounded-2xl sm:px-3 sm:py-4 sm:text-base
                     ${card.isMatched 
                       ? 'bg-green-100 text-green-800 line-through opacity-75' 
                       : card.isError
@@ -173,7 +173,7 @@ export const ConnectPairsGame: React.FC<ConnectPairsGameProps> = ({ items, title
           </div>
 
           {/* Right Column */}
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             <h2 className="text-xl font-semibold text-gray-700 mb-4 text-center">Права колонка</h2>
             {rightCards.map((card, index) => (
               <motion.div
@@ -187,7 +187,7 @@ export const ConnectPairsGame: React.FC<ConnectPairsGameProps> = ({ items, title
                 <button
                   onClick={() => handleCardClick(card.id)}
                   className={`
-                    w-full p-4 rounded-2xl shadow-md transition-all duration-300 text-center font-medium
+                    min-h-[3.25rem] w-full rounded-xl px-2 py-3 text-center text-sm font-medium leading-snug shadow-md transition-all duration-300 sm:min-h-[3.75rem] sm:rounded-2xl sm:px-3 sm:py-4 sm:text-base
                     ${card.isMatched 
                       ? 'bg-green-100 text-green-800 line-through opacity-75' 
                       : card.isError

@@ -74,13 +74,13 @@ export const FindPairGame: React.FC = () => {
         </motion.div>
 
         <div className="text-center mb-4">
-          <h2 className="text-xl md:text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-2">
+          <h2 className="text-lg font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-2">
             Знайди пару
           </h2>
-          <div className="text-sm md:text-lg text-gray-600 mb-1">
+          <div className="text-xs text-gray-600 mb-1">
             Знайдено: <span className="font-bold text-green-600">{matchedPairs}</span> / {(gridSize.rows * gridSize.cols) / 2}
           </div>
-          <div className="text-sm md:text-lg text-gray-600">
+          <div className="text-xs text-gray-600">
             Ходів: <span className="font-bold text-green-600">{moves}</span>
           </div>
         </div>

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { WordPair } from '../../../types'
 
@@ -119,96 +118,76 @@ export const ConnectPairGame: React.FC<ConnectPairGameProps> = ({ items, title }
     <div className="min-h-screen bg-gradient-to-br from-[#EEE9FF] via-[#F5F0FF] to-[#FAF5FF] px-2 py-4">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+        <div
           className="text-center mb-4"
         >
-          <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent mb-2">
+          <h1 className="text-lg font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent mb-2">
             {title}
           </h1>
           
-          <div className="text-sm md:text-lg text-gray-600 font-medium">
+          <div className="text-xs text-gray-600 font-medium">
             Знайдено: <span className="text-primary-600 font-bold">{matchedPairs}</span> / {items.length}
           </div>
-        </motion.div>
+        </div>
 
         {/* Game Board */}
-        <div className="grid grid-cols-2 gap-1 md:gap-8 mb-4 h-full">
+        <div className="flex gap-1 mb-2" style={{ height: '70vh', maxHeight: '70vh', width: '144px', minWidth: '144px', maxWidth: '144px', margin: '0 auto' }}>
           {/* Left Column */}
-          <div className="space-y-1 md:space-y-3">
-            <h2 className="text-sm md:text-xl font-semibold text-gray-700 mb-1 md:mb-4 text-center">Ліва колонка</h2>
+          <div className="space-y-1 min-w-0 flex-shrink-0 overflow-y-auto" style={{ width: '70px', minWidth: '70px', maxWidth: '70px' }}>
+            <h2 className="text-xs font-semibold text-gray-7 mb-1 text-center">Ліва колонка</h2>
             {leftCards.map((card, index) => (
-              <motion.div
+              <button
                 key={card.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.05 }}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <button
-                  onClick={() => handleCardClick(card.id)}
-                  className={`
-                    w-full p-1 md:p-4 rounded-lg md:rounded-2xl shadow-sm md:shadow-md transition-all duration-300 text-center font-medium text-xs md:text-base
+                onClick={() => handleCardClick(card.id)}
+                className={`
+                    w-full p-0.5 rounded-lg shadow-sm transition-all duration-300 text-center font-medium text-xs overflow-hidden
                     ${card.isMatched 
                       ? 'bg-green-100 text-green-800 line-through opacity-75' 
                       : card.isError
-                      ? 'bg-red-100 text-red-800 border-2 border-red-400 animate-shake'
+                      ? 'bg-red-100 text-red-800 border-2 border-red-400 animate-pulse'
                       : card.isSelected
                       ? 'bg-purple-100 border-2 border-purple-500 text-purple-800 shadow-lg'
                       : 'bg-white hover:bg-gray-50 hover:shadow-lg text-gray-800'
                     }
                   `}
+                  style={{ minWidth: '60px' }}
                   disabled={card.isMatched || isChecking}
                 >
-                  {card.content}
+                  <span className="truncate">{card.content}</span>
                 </button>
-              </motion.div>
             ))}
           </div>
 
           {/* Right Column */}
-          <div className="space-y-1 md:space-y-3">
-            <h2 className="text-sm md:text-xl font-semibold text-gray-700 mb-1 md:mb-4 text-center">Права колонка</h2>
+          <div className="space-y-1 min-w-0 flex-shrink-0 overflow-y-auto" style={{ width: '70px', minWidth: '70px', maxWidth: '70px' }}>
+            <h2 className="text-xs font-semibold text-gray-700 mb-1 text-center">Права колонка</h2>
             {rightCards.map((card, index) => (
-              <motion.div
+              <button
                 key={card.id}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.05 }}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <button
-                  onClick={() => handleCardClick(card.id)}
-                  className={`
-                    w-full p-1 md:p-4 rounded-lg md:rounded-2xl shadow-sm md:shadow-md transition-all duration-300 text-center font-medium text-xs md:text-base
+                onClick={() => handleCardClick(card.id)}
+                className={`
+                    w-full p-0.5 rounded-lg shadow-sm transition-all duration-300 text-center font-medium text-xs overflow-hidden
                     ${card.isMatched 
                       ? 'bg-green-100 text-green-800 line-through opacity-75' 
                       : card.isError
-                      ? 'bg-red-100 text-red-800 border-2 border-red-400 animate-shake'
+                      ? 'bg-red-100 text-red-800 border-2 border-red-400 animate-pulse'
                       : card.isSelected
                       ? 'bg-purple-100 border-2 border-purple-500 text-purple-800 shadow-lg'
                       : 'bg-white hover:bg-gray-50 hover:shadow-lg text-gray-800'
                     }
                   `}
+                  style={{ minWidth: '60px' }}
                   disabled={card.isMatched || isChecking}
                 >
-                  {card.content}
+                  <span className="truncate">{card.content}</span>
                 </button>
-              </motion.div>
             ))}
           </div>
         </div>
 
         {/* Victory Screen */}
         {matchedPairs === items.length && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
+          <div
             className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
           >
             <div className="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl">
@@ -226,21 +205,9 @@ export const ConnectPairGame: React.FC<ConnectPairGameProps> = ({ items, title }
                 Грати знову
               </button>
             </div>
-          </motion.div>
+          </div>
         )}
       </div>
-
-      <style jsx>{`
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
-          20%, 40%, 60%, 80% { transform: translateX(2px); }
-        }
-        
-        .animate-shake {
-          animation: shake 0.5s ease-in-out;
-        }
-      `}</style>
     </div>
   )
 }

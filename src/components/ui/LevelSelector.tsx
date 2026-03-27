@@ -50,7 +50,7 @@ export const LevelSelector: React.FC<LevelSelectorProps> = ({
           Оберіть рівень складності
         </h2>
         
-        <div className="grid gap-4 md:grid-cols-3 max-w-2xl mx-auto">
+        <div className="mx-auto grid max-w-3xl grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
           {levels.map((lvl: Level, index: number) => (
             <motion.div
               key={lvl.value}
@@ -63,15 +63,15 @@ export const LevelSelector: React.FC<LevelSelectorProps> = ({
               <button
                 onClick={() => handleLevelClick(lvl.value)}
                 className={`
-                  w-full p-6 rounded-xl border-2 transition-all duration-300
+                  w-full rounded-xl border-2 p-4 transition-all duration-300 sm:p-5
                   ${selectedLevel === lvl.value
                     ? theme.selected
                     : theme.default
                   }
                 `}
               >
-                <div className="text-xl font-bold mb-2">{lvl.label}</div>
-                <div className="text-sm opacity-75">{lvl.description}</div>
+                <div className="mb-1 text-lg font-bold sm:mb-2 sm:text-xl">{lvl.label}</div>
+                <div className="text-xs opacity-75 sm:text-sm">{lvl.description}</div>
               </button>
             </motion.div>
           ))}
@@ -85,7 +85,7 @@ export const LevelSelector: React.FC<LevelSelectorProps> = ({
             Розмір поля
           </h2>
           
-          <div className="grid gap-4 md:grid-cols-3 max-w-2xl mx-auto">
+          <div className="mx-auto grid max-w-3xl grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
             {gridSizes.map((size: GridSizeOption, index: number) => (
               <motion.div
                 key={`${size.rows}x${size.cols}`}
@@ -98,15 +98,15 @@ export const LevelSelector: React.FC<LevelSelectorProps> = ({
                 <button
                   onClick={() => handleGridSizeClick({ rows: size.rows, cols: size.cols })}
                   className={`
-                    w-full p-6 rounded-xl border-2 transition-all duration-300
+                    w-full rounded-xl border-2 p-4 transition-all duration-300 sm:p-5
                     ${selectedGridSize.rows === size.rows && selectedGridSize.cols === size.cols
                       ? theme.selected
                       : theme.default
                     }
                   `}
                 >
-                  <div className="text-xl font-bold mb-2">{size.label}</div>
-                  <div className="text-sm opacity-75">{size.description}</div>
+                  <div className="mb-1 text-lg font-bold sm:mb-2 sm:text-xl">{size.label}</div>
+                  <div className="text-xs opacity-75 sm:text-sm">{size.description}</div>
                 </button>
               </motion.div>
             ))}

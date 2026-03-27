@@ -39,7 +39,7 @@ export const LevelSelector: React.FC = () => {
           Оберіть рівень складності
         </h2>
         
-        <div className="grid gap-4 md:grid-cols-3 max-w-2xl mx-auto">
+        <div className="mx-auto grid max-w-3xl grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
           {levels.map((lvl, index) => (
             <motion.div
               key={lvl.value}
@@ -52,15 +52,15 @@ export const LevelSelector: React.FC = () => {
               <button
                 onClick={() => setLevel(lvl.value)}
                 className={`
-                  w-full p-6 rounded-xl border-2 transition-all duration-300
+                  w-full rounded-xl border-2 p-4 transition-all duration-300 sm:p-5
                   ${level === lvl.value
                     ? 'border-primary-500 bg-primary-50 text-primary-700 shadow-lg'
                     : 'border-gray-200 bg-white text-gray-700 hover:border-primary-300 hover:shadow-md'
                   }
                 `}
               >
-                <div className="text-xl font-bold mb-2">{lvl.label}</div>
-                <div className="text-sm opacity-75">{lvl.description}</div>
+                <div className="mb-1 text-lg font-bold sm:mb-2 sm:text-xl">{lvl.label}</div>
+                <div className="text-xs opacity-75 sm:text-sm">{lvl.description}</div>
               </button>
             </motion.div>
           ))}
@@ -73,7 +73,7 @@ export const LevelSelector: React.FC = () => {
           Розмір поля
         </h2>
         
-        <div className="grid gap-4 md:grid-cols-3 max-w-2xl mx-auto">
+        <div className="mx-auto grid max-w-3xl grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
           {gridSizes.map((size, index) => (
             <motion.div
               key={`${size.rows}x${size.cols}`}
@@ -86,15 +86,15 @@ export const LevelSelector: React.FC = () => {
               <button
                 onClick={() => setGridSize({ rows: size.rows, cols: size.cols })}
                 className={`
-                  w-full p-6 rounded-xl border-2 transition-all duration-300
+                  w-full rounded-xl border-2 p-4 transition-all duration-300 sm:p-5
                   ${gridSize.rows === size.rows && gridSize.cols === size.cols
                     ? 'border-secondary-500 bg-secondary-50 text-secondary-700 shadow-lg'
                     : 'border-gray-200 bg-white text-gray-700 hover:border-secondary-300 hover:shadow-md'
                   }
                 `}
               >
-                <div className="text-xl font-bold mb-2">{size.label}</div>
-                <div className="text-sm opacity-75">{size.description}</div>
+                <div className="mb-1 text-lg font-bold sm:mb-2 sm:text-xl">{size.label}</div>
+                <div className="text-xs opacity-75 sm:text-sm">{size.description}</div>
               </button>
             </motion.div>
           ))}

@@ -35,12 +35,12 @@ export const LevelSelectorSimple: React.FC<LevelSelectorSimpleProps> = ({
   const theme = colorThemes[colorTheme]
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-semibold text-gray-800 text-center">
+    <div className="space-y-5">
+      <h2 className="text-center text-xl font-semibold text-gray-800 sm:text-2xl">
         Оберіть рівень складності
       </h2>
       
-      <div className="grid gap-4 md:grid-cols-3 max-w-2xl mx-auto">
+      <div className="mx-auto grid max-w-3xl grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
         {levels.map((level, index) => (
           <motion.div
             key={level.value}
@@ -56,15 +56,15 @@ export const LevelSelectorSimple: React.FC<LevelSelectorSimpleProps> = ({
                 onLevelSelect(level.value)
               }}
               className={`
-                w-full p-6 rounded-xl border-2 transition-all duration-300
+                w-full rounded-xl border-2 p-4 transition-all duration-300 sm:p-5
                 ${selectedLevel === level.value
                   ? theme.selected
                   : theme.default
                 }
               `}
             >
-              <div className="text-xl font-bold mb-2">{level.label}</div>
-              <div className="text-sm opacity-75">{level.description}</div>
+              <div className="mb-1 text-lg font-bold sm:mb-2 sm:text-xl">{level.label}</div>
+              <div className="text-xs opacity-75 sm:text-sm">{level.description}</div>
             </button>
           </motion.div>
         ))}
