@@ -28,18 +28,18 @@ export const Card: React.FC<CardProps> = ({ card, onClick, disabled }) => {
           ${disabled ? 'cursor-not-allowed' : ''}
         `}
       >
-        <div className="absolute inset-0 flex items-center justify-center p-4">
+        <div className="absolute inset-0 flex items-center justify-center p-2 md:p-4">
           {card.isFlipped || card.isMatched ? (
             <motion.div
               initial={{ rotateY: 180, opacity: 0 }}
               animate={{ rotateY: 0, opacity: 1 }}
               transition={{ duration: 0.3 }}
-              className="text-2xl md:text-3xl font-bold text-gray-800 text-center"
+              className="text-lg md:text-3xl font-bold text-gray-800 text-center"
             >
               {card.content}
             </motion.div>
           ) : (
-            <div className="text-4xl md:text-5xl text-white">?</div>
+            <div className="text-2xl md:text-5xl text-white">?</div>
           )}
         </div>
       </div>

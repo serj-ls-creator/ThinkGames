@@ -11,31 +11,6 @@
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
-    "/math/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/math/page.js"
-    ],
-    "/math/pair-game/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/math/pair-game/page.js"
-    ],
-    "/math/pair-game/play/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/math/pair-game/play/page.js"
-    ],
-    "/math/connect-pairs/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/math/connect-pairs/page.js"
-    ],
-    "/math/connect-pairs/[level]/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/math/connect-pairs/[level]/page.js"
-    ],
     "/dutch/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -50,6 +25,31 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/dutch/connect-pairs/[level]/page.js"
+    ],
+    "/math/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/math/page.js"
+    ],
+    "/math/connect-pairs/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/math/connect-pairs/page.js"
+    ],
+    "/math/connect-pairs/[level]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/math/connect-pairs/[level]/page.js"
+    ],
+    "/math/pair-game/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/math/pair-game/page.js"
+    ],
+    "/math/pair-game/play/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/math/pair-game/play/page.js"
     ]
   }
 }

@@ -20,7 +20,7 @@ export const GameGrid: React.FC = () => {
   }
 
   return (
-    <div className={`grid ${getGridClasses()} gap-3 md:gap-4 max-w-4xl mx-auto`}>
+    <div className={`grid ${getGridClasses()} gap-1 md:gap-4 max-w-4xl mx-auto`}>
       {cards.map((card) => (
         <Card
           key={card.id}

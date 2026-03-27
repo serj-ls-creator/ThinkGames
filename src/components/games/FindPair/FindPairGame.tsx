@@ -57,30 +57,30 @@ export const FindPairGame: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen px-4 py-8">
+    <div className="min-h-screen px-2 py-4">
       <div className="max-w-4xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-6"
+          className="text-center mb-4"
         >
           <Link
             href="/math/find-pair"
-            className="inline-flex items-center text-gray-600 hover:text-green-600 transition-colors mb-4"
+            className="inline-flex items-center text-gray-600 hover:text-green-600 transition-colors mb-2 text-sm"
           >
             ← Назад до налаштувань
           </Link>
         </motion.div>
 
-        <div className="text-center mb-6">
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-4">
+        <div className="text-center mb-4">
+          <h2 className="text-xl md:text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-2">
             Знайди пару
           </h2>
-          <div className="text-lg text-gray-600 mb-2">
+          <div className="text-sm md:text-lg text-gray-600 mb-1">
             Знайдено: <span className="font-bold text-green-600">{matchedPairs}</span> / {(gridSize.rows * gridSize.cols) / 2}
           </div>
-          <div className="text-lg text-gray-600">
+          <div className="text-sm md:text-lg text-gray-600">
             Ходів: <span className="font-bold text-green-600">{moves}</span>
           </div>
         </div>
@@ -89,7 +89,7 @@ export const FindPairGame: React.FC = () => {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="mb-8"
+          className="mb-4"
         >
           <GameGrid />
         </motion.div>
