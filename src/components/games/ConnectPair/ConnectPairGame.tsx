@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { WordPair } from '../../../types'
-import { addPoints } from '../../../lib/points'
 
 interface ConnectPairGameProps {
   items: WordPair[]
@@ -82,7 +81,6 @@ export const ConnectPairGame: React.FC<ConnectPairGameProps> = ({ items, title }
       if (leftCard && leftCard.pairId === card.pairId) {
         // Correct match
         setTimeout(() => {
-          addPoints(1)
           setCards(prev => prev.map(c => 
             (c.id === selectedLeft || c.id === cardId)
               ? { ...c, isSelected: false, isMatched: true }
@@ -136,7 +134,7 @@ export const ConnectPairGame: React.FC<ConnectPairGameProps> = ({ items, title }
         <div className="flex gap-1 mb-2" style={{ height: '70vh', maxHeight: '70vh', width: '144px', minWidth: '144px', maxWidth: '144px', margin: '0 auto' }}>
           {/* Left Column */}
           <div className="space-y-1 min-w-0 flex-shrink-0 overflow-y-auto" style={{ width: '70px', minWidth: '70px', maxWidth: '70px' }}>
-            <h2 className="text-xs font-semibold text-gray-7 mb-1 text-center">Ліва колонка</h2>
+            <h2 className="text-xs font-semibold text-gray-700 mb-1 text-center">Ліва колонка</h2>
             {leftCards.map((card, index) => (
               <button
                 key={card.id}
