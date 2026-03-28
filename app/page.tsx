@@ -7,57 +7,62 @@ import { SectionCard } from '../src/components/layout/SectionCard'
 import { BottomNav } from '../src/components/layout/BottomNav'
 import { ProgressBar } from '../src/components/ui/ProgressBar'
 import { SECTIONS } from '../src/constants'
-import {
-  DEFAULT_PROFILE,
-  PROFILE_STORAGE_KEY,
-  UserProfile,
-  normalizeProfile,
-} from '../src/lib/profile'
+import { DEFAULT_PROFILE } from '../src/lib/profile'
 import { getLevelProgress, getUserStats } from '../src/lib/points'
 import { getUserProfile } from '../src/lib/profile-db'
 import { useAuth } from '../src/context/AuthContext'
 
 export default function Home() {
   const { user } = useAuth()
-  const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE)
-  const [displayName, setDisplayName] = useState('')
+  const [profile, setProfile] = useState({
+    name: DEFAULT_PROFILE.name,
+    avatar: DEFAULT_PROFILE.avatar
+  })
   const [userStats, setUserStats] = useState({
     math: { currentLevel: 1, xpInLevel: 0, xpToNextLevel: 500, progressPercentage: 0 },
     ukrainian: { currentLevel: 1, xpInLevel: 0, xpToNextLevel: 500, progressPercentage: 0 },
     dutch: { currentLevel: 1, xpInLevel: 0, xpToNextLevel: 500, progressPercentage: 0 }
   })
-  const [isHydrated, setIsHydrated] = useState(false)
 
+  // Загрузка профиля и статистики из Supabase
   useEffect(() => {
-    try {
-      const savedProfile = localStorage.getItem(PROFILE_STORAGE_KEY)
-      setProfile(normalizeProfile(savedProfile ? JSON.parse(savedProfile) : null))
-    } catch (error) {
-      console.error('Failed to load user profile:', error)
-    } finally {
-      setIsHydrated(true)
-    }
-  }, [])
+    if (!user?.id) return
 
-  // Загрузка displayName из Supabase
-  useEffect(() => {
-    if (!isHydrated || !user?.id) return
+    const loadData = async () => {
+      // Загрузка профиля
+      const { success: profileSuccess, data: profileData } = await getUserProfile(user.id)
+      if (profileSuccess && profileData) {
+        setProfile({
+          name: profileData.display_name || DEFAULT_PROFILE.name,
+          avatar: profileData.avatar_url || DEFAULT_PROFILE.avatar
+        })
+      } else {
+        // Если профиля нет, используем email и стандартный аватар
+        setProfile({
+          name: user.email || DEFAULT_PROFILE.name,
+          avatar: DEFAULT_PROFILE.avatar
+        })
+      }
 
-    const loadDisplayName = async () => {
-      const { success, data } = await getUserProfile(user.id)
-      if (success && data) {
-        setDisplayName(data.display_name || '')
+      // Загрузка статистики
+      const { success: statsSuccess, data: statsData } = await getUserStats(user.id)
+      if (statsSuccess && statsData) {
+        setUserStats({
+          math: getLevelProgress(statsData.math_xp || 0),
+          ukrainian: getLevelProgress(statsData.ukrainian_xp || 0),
+          dutch: getLevelProgress(statsData.dutch_xp || 0)
+        })
       }
     }
 
-    loadDisplayName()
-  }, [user, isHydrated])
+    loadData()
+  }, [user?.id, user?.email])
 
-  // Загрузка статистики из Supabase
+  // Обновление прогресса при изменении
   useEffect(() => {
-    if (!isHydrated || !user?.id) return
-
-    const loadUserStats = async () => {
+    if (!user?.id) return
+    
+    const updateProgress = async () => {
       const { success, data } = await getUserStats(user.id)
       if (success && data) {
         setUserStats({
@@ -67,19 +72,13 @@ export default function Home() {
         })
       }
     }
-
-    loadUserStats()
-  }, [user, isHydrated])
-
-  useEffect(() => {
-    if (!isHydrated) return
-
-    try {
-      localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile))
-    } catch (error) {
-      console.error('Failed to save user profile:', error)
+    
+    window.addEventListener('focus', updateProgress)
+    
+    return () => {
+      window.removeEventListener('focus', updateProgress)
     }
-  }, [isHydrated, profile])
+  }, [user?.id])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#EEE9FF] via-[#F5F0FF] to-[#FAF5FF]">
@@ -107,7 +106,7 @@ export default function Home() {
           </div>
 
           <h1 className="mb-2 text-2xl font-bold text-gray-800">
-            Привіт{displayName ? `, ${displayName}!` : '!'}
+            Привіт{profile.name && profile.name !== DEFAULT_PROFILE.name ? `, ${profile.name}` : ''}!
           </h1>
 
           <div className="space-y-2">
@@ -117,7 +116,7 @@ export default function Home() {
               showLabel={true} 
               color="bg-gradient-to-r from-blue-500 to-cyan-500"
             />
-            <p className="text-sm text-gray-600">Математика: Рівень {userStats.math.currentLevel} - {userStats.math.xpInLevel} / {userStats.math.xpToNextLevel} XP</p>
+            <p className="text-sm text-gray-600">Математика: Рівень {userStats.math.currentLevel} - {userStats.math.xpInLevel}/{userStats.math.xpToNextLevel} XP</p>
           </div>
         </motion.div>
 

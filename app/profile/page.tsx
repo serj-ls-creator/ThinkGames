@@ -3,14 +3,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
+import { useRouter } from 'next/navigation'
 import { BottomNav } from '../../src/components/layout/BottomNav'
 import { ProgressBar } from '../../src/components/ui/ProgressBar'
 import {
   AVATAR_OPTIONS,
   DEFAULT_PROFILE,
-  PROFILE_STORAGE_KEY,
-  UserProfile,
-  normalizeProfile,
 } from '../../src/lib/profile'
 import { getLevelProgress, getUserStats } from '../../src/lib/points'
 import { getUserProfile, updateUserProfile, Profile } from '../../src/lib/profile-db'
@@ -18,7 +16,11 @@ import { useAuth } from '../../src/context/AuthContext'
 
 export default function ProfilePage() {
   const { user, loading, signOut } = useAuth()
-  const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE)
+  const router = useRouter()
+  const [profile, setProfile] = useState({
+    name: DEFAULT_PROFILE.name,
+    avatar: DEFAULT_PROFILE.avatar
+  })
   const [dbProfile, setDbProfile] = useState<Profile | null>(null)
   const [draftName, setDraftName] = useState(DEFAULT_PROFILE.name)
   const [userStats, setUserStats] = useState({
@@ -26,35 +28,11 @@ export default function ProfilePage() {
     ukrainian: { currentLevel: 1, xpInLevel: 0, xpToNextLevel: 500, progressPercentage: 0 },
     dutch: { currentLevel: 1, xpInLevel: 0, xpToNextLevel: 500, progressPercentage: 0 }
   })
-  const [isHydrated, setIsHydrated] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-
-  useEffect(() => {
-    try {
-      const savedProfile = localStorage.getItem(PROFILE_STORAGE_KEY)
-      const nextProfile = normalizeProfile(savedProfile ? JSON.parse(savedProfile) : null)
-      setProfile(nextProfile)
-      setDraftName(nextProfile.name)
-    } catch (error) {
-      console.error('Failed to load user profile:', error)
-    } finally {
-      setIsHydrated(true)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!isHydrated) return
-
-    try {
-      localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile))
-    } catch (error) {
-      console.error('Failed to save user profile:', error)
-    }
-  }, [isHydrated, profile])
 
   // Загрузка профиля из Supabase
   useEffect(() => {
-    if (!isHydrated || !user?.id) return
+    if (!user?.id) return
 
     const loadDbProfile = async () => {
       const { success, data } = await getUserProfile(user.id)
@@ -62,21 +40,20 @@ export default function ProfilePage() {
         setDbProfile(data)
         // Обновляем локальный профиль данными из БД
         const previousName = profile.name
-        setProfile(prev => ({
-          ...prev,
-          name: data.display_name || prev.name,
-          avatar: data.avatar_url || prev.avatar
-        }))
+        setProfile({
+          name: data.display_name || DEFAULT_PROFILE.name,
+          avatar: data.avatar_url || DEFAULT_PROFILE.avatar
+        })
         setDraftName(data.display_name || previousName)
       }
     }
 
     loadDbProfile()
-  }, [user, isHydrated])
+  }, [user?.id])
 
   // Загрузка статистики из Supabase
   useEffect(() => {
-    if (!isHydrated || !user?.id) return
+    if (!user?.id) return
 
     const loadUserStats = async () => {
       const { success, data } = await getUserStats(user.id)
@@ -90,11 +67,11 @@ export default function ProfilePage() {
     }
 
     loadUserStats()
-  }, [user, isHydrated])
+  }, [user?.id])
 
   // Обновление прогресса при изменении
   useEffect(() => {
-    if (!isHydrated || !user?.id) return
+    if (!user?.id) return
     
     const updateProgress = async () => {
       const { success, data } = await getUserStats(user.id)
@@ -112,7 +89,7 @@ export default function ProfilePage() {
     return () => {
       window.removeEventListener('focus', updateProgress)
     }
-  }, [user, isHydrated])
+  }, [user?.id])
 
   const greetingName = useMemo(() => profile.name || DEFAULT_PROFILE.name, [profile.name])
   
@@ -137,10 +114,10 @@ export default function ProfilePage() {
       
       if (success) {
         // Обновляем локальное состояние
-        setProfile((current) => ({
-          ...current,
+        setProfile({
           name: newName,
-        }))
+          avatar: profile.avatar
+        })
         setDraftName(newName)
       }
     } catch (error) {
@@ -159,10 +136,10 @@ export default function ProfilePage() {
       
       if (success) {
         // Обновляем локальное состояние
-        setProfile((current) => ({
-          ...current,
-          avatar: newAvatar,
-        }))
+        setProfile({
+          name: profile.name,
+          avatar: newAvatar
+        })
       }
     } catch (error) {
       console.error('Failed to save avatar:', error)
@@ -171,6 +148,7 @@ export default function ProfilePage() {
 
   const handleSignOut = async () => {
     await signOut()
+    router.push('/login')
   }
 
   // Если загружается, показываем спиннер
@@ -386,6 +364,21 @@ export default function ProfilePage() {
               ))}
             </div>
           </section>
+        </motion.div>
+
+        {/* Кнопка выхода */}
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, delay: 0.2 }}
+          className="mt-6"
+        >
+          <button
+            onClick={handleSignOut}
+            className="w-full rounded-2xl bg-red-500 px-6 py-4 text-center text-base font-semibold text-white shadow-lg transition-all hover:bg-red-600 active:scale-95"
+          >
+            Вийти з аккаунту
+          </button>
         </motion.div>
       </div>
 
