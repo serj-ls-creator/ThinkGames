@@ -154,8 +154,8 @@ export const BalanceScaleGame: React.FC<BalanceScaleGameProps> = ({ maxValue }) 
                 <circle cx="555" cy="170" r="16" fill="#020617" />
                 <circle cx="555" cy="170" r="8" fill="white" />
                 {/* Контейнер для выбранных гирь */}
-                <foreignObject x="480" y="60" width="150" height="100">
-                  <div className="flex h-full w-full flex-wrap items-end justify-center gap-1">
+                <foreignObject x="480" y="0" width="150" height="120">
+                  <div className="flex h-full w-full flex-col-reverse items-center justify-start gap-1">
                     {selectedWeights.map((weight) => (
                       <WeightBadge key={weight.id} value={weight.value} />
                     ))}
