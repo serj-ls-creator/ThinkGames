@@ -12,22 +12,14 @@ import {
   UserProfile,
   normalizeProfile,
 } from '../../src/lib/profile'
-import { getLevelProgress, getUserStats } from '../../src/lib/points'
-import { getUserProfile, updateUserProfile, Profile } from '../../src/lib/profile-db'
+import { getCategoryProgress, POINTS_PER_LEVEL, isUserAuthenticated } from '../../src/lib/auth-points'
 import { useAuth } from '../../src/context/AuthContext'
 
 export default function ProfilePage() {
   const { user, loading, signOut } = useAuth()
   const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE)
-  const [dbProfile, setDbProfile] = useState<Profile | null>(null)
   const [draftName, setDraftName] = useState(DEFAULT_PROFILE.name)
-  const [userStats, setUserStats] = useState({
-    math: { currentLevel: 1, xpInLevel: 0, xpToNextLevel: 500, progressPercentage: 0 },
-    ukrainian: { currentLevel: 1, xpInLevel: 0, xpToNextLevel: 500, progressPercentage: 0 },
-    dutch: { currentLevel: 1, xpInLevel: 0, xpToNextLevel: 500, progressPercentage: 0 }
-  })
   const [isHydrated, setIsHydrated] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     try {
@@ -52,121 +44,52 @@ export default function ProfilePage() {
     }
   }, [isHydrated, profile])
 
-  // Загрузка профиля из Supabase
-  useEffect(() => {
-    if (!isHydrated || !user?.id) return
-
-    const loadDbProfile = async () => {
-      const { success, data } = await getUserProfile(user.id)
-      if (success && data) {
-        setDbProfile(data)
-        // Обновляем локальный профиль данными из БД
-        const previousName = profile.name
-        setProfile(prev => ({
-          ...prev,
-          name: data.display_name || prev.name,
-          avatar: data.avatar_url || prev.avatar
-        }))
-        setDraftName(data.display_name || previousName)
-      }
-    }
-
-    loadDbProfile()
-  }, [user, isHydrated])
-
-  // Загрузка статистики из Supabase
-  useEffect(() => {
-    if (!isHydrated || !user?.id) return
-
-    const loadUserStats = async () => {
-      const { success, data } = await getUserStats(user.id)
-      if (success && data) {
-        setUserStats({
-          math: getLevelProgress(data.math_xp || 0),
-          ukrainian: getLevelProgress(data.ukrainian_xp || 0),
-          dutch: getLevelProgress(data.dutch_xp || 0)
-        })
-      }
-    }
-
-    loadUserStats()
-  }, [user, isHydrated])
-
   // Обновление прогресса при изменении
   useEffect(() => {
-    if (!isHydrated || !user?.id) return
+    if (!isHydrated) return
     
-    const updateProgress = async () => {
-      const { success, data } = await getUserStats(user.id)
-      if (success && data) {
-        setUserStats({
-          math: getLevelProgress(data.math_xp || 0),
-          ukrainian: getLevelProgress(data.ukrainian_xp || 0),
-          dutch: getLevelProgress(data.dutch_xp || 0)
-        })
-      }
+    const updateProgress = () => {
+      // Принудительное обновление компонента для отображения новых данных
+      const event = new Event('storage')
+      window.dispatchEvent(event)
     }
     
+    window.addEventListener('storage', updateProgress)
     window.addEventListener('focus', updateProgress)
     
     return () => {
+      window.removeEventListener('storage', updateProgress)
       window.removeEventListener('focus', updateProgress)
     }
-  }, [user, isHydrated])
+  }, [isHydrated])
 
   const greetingName = useMemo(() => profile.name || DEFAULT_PROFILE.name, [profile.name])
   
+  // Информация по категориям с учетом авторизации
+  const categoryInfo = useMemo(() => {
+    return {
+      math: getCategoryProgress('math', user),
+      dutch: getCategoryProgress('dutch', user),
+      ukrainian: getCategoryProgress('ukrainian', user)
+    }
+  }, [user, isHydrated])
+
   // Глобальный уровень (сумма всех XP)
   const globalLevel = useMemo(() => {
-    const totalXP = userStats.math.xpInLevel + userStats.ukrainian.xpInLevel + userStats.dutch.xpInLevel
-    const level = Math.floor(totalXP / 500) + 1
-    const progress = (totalXP % 500) / 500 * 100
+    const userId = user?.id || localStorage.getItem('anonymous_session_id') || 'default';
+    const totalXP = Number(localStorage.getItem(`total_xp_${userId}`) || 0)
+    const level = Math.floor(totalXP / POINTS_PER_LEVEL) + 1
+    const progress = (totalXP % POINTS_PER_LEVEL) / POINTS_PER_LEVEL * 100
     
     return { level, progress }
-  }, [userStats])
+  }, [user, isHydrated])
 
-  const commitName = async () => {
-    if (!user?.id) return
-    
-    setIsSaving(true)
-    const newName = draftName.trim() || DEFAULT_PROFILE.name
-    
-    try {
-      // Сохраняем в Supabase
-      const { success } = await updateUserProfile(user.id, newName, profile.avatar)
-      
-      if (success) {
-        // Обновляем локальное состояние
-        setProfile((current) => ({
-          ...current,
-          name: newName,
-        }))
-        setDraftName(newName)
-      }
-    } catch (error) {
-      console.error('Failed to save profile:', error)
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  const commitAvatar = async (newAvatar: string) => {
-    if (!user?.id) return
-    
-    try {
-      // Сохраняем в Supabase
-      const { success } = await updateUserProfile(user.id, profile.name, newAvatar)
-      
-      if (success) {
-        // Обновляем локальное состояние
-        setProfile((current) => ({
-          ...current,
-          avatar: newAvatar,
-        }))
-      }
-    } catch (error) {
-      console.error('Failed to save avatar:', error)
-    }
+  const commitName = () => {
+    setProfile((current) => ({
+      ...current,
+      name: draftName.trim() || DEFAULT_PROFILE.name,
+    }))
+    setDraftName((current) => current.trim() || DEFAULT_PROFILE.name)
   }
 
   const handleSignOut = async () => {
@@ -223,6 +146,15 @@ export default function ProfilePage() {
                 >
                   Увійти / Зареєструватися
                 </Link>
+                
+                <div className="rounded-2xl bg-yellow-50 p-4 text-center">
+                  <p className="text-sm text-yellow-800">
+                    ⚠️ Увійдіть, щоб зберегти прогрес назавжди
+                  </p>
+                  <p className="text-xs text-yellow-600 mt-1">
+                    Продовжуйте грати анонімно, але ваш прогрес буде збережено тільки на цьому пристрої
+                  </p>
+                </div>
               </div>
             </div>
           </motion.div>
@@ -265,6 +197,22 @@ export default function ProfilePage() {
               </button>
             </div>
 
+            {/* Глобальный уровень */}
+            <div className="rounded-3xl bg-gradient-to-r from-purple-50 via-white to-sky-50 p-4 mb-4">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-sm font-semibold text-gray-800">Глобальний рівень</span>
+                <span className="text-sm font-bold text-purple-700">Рівень {globalLevel.level}</span>
+              </div>
+              <ProgressBar
+                current={globalLevel.progress}
+                total={100}
+                color="bg-gradient-to-r from-purple-500 via-indigo-500 to-sky-500"
+              />
+              <p className="mt-2 text-xs text-gray-500">
+                {Math.round(globalLevel.progress)}% до наступного рівня
+              </p>
+            </div>
+
             {/* Детализация по категориям */}
             <div className="space-y-3">
               <div className="rounded-2xl bg-gray-50/80 p-3">
@@ -273,16 +221,16 @@ export default function ProfilePage() {
                     <span className="text-lg">🔢</span>
                     <span className="text-sm font-semibold text-gray-800">Математика</span>
                   </div>
-                  <span className="text-xs font-bold text-blue-700">Рівень {userStats.math.currentLevel}</span>
+                  <span className="text-xs font-bold text-blue-700">Рівень {categoryInfo.math.level}</span>
                 </div>
                 <ProgressBar
-                  current={userStats.math.xpInLevel}
-                  total={userStats.math.xpToNextLevel}
+                  current={categoryInfo.math.current}
+                  total={categoryInfo.math.total}
                   color="bg-gradient-to-r from-blue-500 to-cyan-500"
                   height="h-1"
                 />
                 <p className="mt-1 text-xs text-gray-500">
-                  {userStats.math.xpInLevel} / {userStats.math.xpToNextLevel} XP до наступного рівня
+                  {categoryInfo.math.current} / {categoryInfo.math.total} XP до наступного рівня
                 </p>
               </div>
 
@@ -292,16 +240,16 @@ export default function ProfilePage() {
                     <span className="text-lg">🇳🇱</span>
                     <span className="text-sm font-semibold text-gray-800">Нідерландська</span>
                   </div>
-                  <span className="text-xs font-bold text-orange-700">Рівень {userStats.dutch.currentLevel}</span>
+                  <span className="text-xs font-bold text-orange-700">Рівень {categoryInfo.dutch.level}</span>
                 </div>
                 <ProgressBar
-                  current={userStats.dutch.xpInLevel}
-                  total={userStats.dutch.xpToNextLevel}
+                  current={categoryInfo.dutch.current}
+                  total={categoryInfo.dutch.total}
                   color="bg-gradient-to-r from-orange-500 to-red-500"
                   height="h-1"
                 />
                 <p className="mt-1 text-xs text-gray-500">
-                  {userStats.dutch.xpInLevel} / {userStats.dutch.xpToNextLevel} XP до наступного рівня
+                  {categoryInfo.dutch.current} / {categoryInfo.dutch.total} XP до наступного рівня
                 </p>
               </div>
 
@@ -311,16 +259,16 @@ export default function ProfilePage() {
                     <span className="text-lg">🇺🇦</span>
                     <span className="text-sm font-semibold text-gray-800">Українська</span>
                   </div>
-                  <span className="text-xs font-bold text-green-700">Рівень {userStats.ukrainian.currentLevel}</span>
+                  <span className="text-xs font-bold text-green-700">Рівень {categoryInfo.ukrainian.level}</span>
                 </div>
                 <ProgressBar
-                  current={userStats.ukrainian.xpInLevel}
-                  total={userStats.ukrainian.xpToNextLevel}
+                  current={categoryInfo.ukrainian.current}
+                  total={categoryInfo.ukrainian.total}
                   color="bg-gradient-to-r from-green-500 to-emerald-500"
                   height="h-1"
                 />
                 <p className="mt-1 text-xs text-gray-500">
-                  {userStats.ukrainian.xpInLevel} / {userStats.ukrainian.xpToNextLevel} XP до наступного рівня
+                  {categoryInfo.ukrainian.current} / {categoryInfo.ukrainian.total} XP до наступного рівня
                 </p>
               </div>
             </div>
@@ -343,17 +291,15 @@ export default function ProfilePage() {
                 value={draftName}
                 onChange={(event) => setDraftName(event.target.value.slice(0, 24))}
                 onBlur={commitName}
-                disabled={isSaving}
-                className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-base text-gray-800 outline-none transition focus:border-purple-400 focus:ring-2 focus:ring-purple-100 disabled:opacity-50"
+                className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-base text-gray-800 outline-none transition focus:border-purple-400 focus:ring-2 focus:ring-purple-100"
                 placeholder="Введи ім&apos;я"
               />
               <button
                 type="button"
                 onClick={commitName}
-                disabled={isSaving}
-                className="rounded-2xl bg-gradient-to-r from-purple-500 to-indigo-500 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:opacity-95 disabled:opacity-50"
+                className="rounded-2xl bg-gradient-to-r from-purple-500 to-indigo-500 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:opacity-95"
               >
-                {isSaving ? 'Збереження...' : 'Зберегти'}
+                Зберегти
               </button>
             </div>
           </section>
@@ -374,7 +320,7 @@ export default function ProfilePage() {
                 <button
                   key={avatar}
                   type="button"
-                  onClick={() => commitAvatar(avatar)}
+                  onClick={() => setProfile((current) => ({ ...current, avatar }))}
                   className={`flex h-12 w-full items-center justify-center rounded-2xl text-2xl transition ${
                     profile.avatar === avatar
                       ? 'bg-purple-100 ring-2 ring-purple-400 shadow-sm'

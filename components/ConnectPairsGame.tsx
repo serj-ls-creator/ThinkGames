@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { addPoints } from '../src/lib/points'
+import { updateUserXP, addXPWithBonus } from '../src/lib/points'
+import { useAuth } from '../src/context/AuthContext'
+import { useRouter } from 'next/navigation'
 
 // Отказоустойчивая функция озвучки для Chrome/Edge на Windows
 const speak = (text: string, lang: 'nl-NL' | 'uk-UA') => {
@@ -57,10 +59,20 @@ interface CardState {
 }
 
 export const ConnectPairsGame: React.FC<ConnectPairsGameProps> = ({ items, title }) => {
+  const { user } = useAuth()
   const [cards, setCards] = useState<CardState[]>([])
   const [selectedLeft, setSelectedLeft] = useState<string | null>(null)
   const [matchedPairs, setMatchedPairs] = useState(0)
   const [isChecking, setIsChecking] = useState(false)
+  const [mistakes, setMistakes] = useState(0)
+  const router = useRouter()
+  
+  // Перенаправление на логин если не авторизован
+  useEffect(() => {
+    if (!user) {
+      router.push('/login')
+    }
+  }, [user, router])
 
   // Глобальная инициализация голосов для Chrome
   useEffect(() => {
@@ -71,6 +83,17 @@ export const ConnectPairsGame: React.FC<ConnectPairsGameProps> = ({ items, title
   useEffect(() => {
     initializeGame()
   }, [items])
+
+  // Бонус за чистую игру
+  useEffect(() => {
+    if (matchedPairs === items.length && items.length > 0 && user) {
+      // Игра завершена - проверяем ошибки
+      if (mistakes === 0) {
+        // +10 XP бонус за чистую игру
+        addXPWithBonus(user.id, 'dutch', 0, true) // только бонус
+      }
+    }
+  }, [matchedPairs, items.length, mistakes, user])
 
   const initializeGame = () => {
     const leftCards: CardState[] = items.map((item, index) => ({
@@ -128,8 +151,11 @@ export const ConnectPairsGame: React.FC<ConnectPairsGameProps> = ({ items, title
       
       if (leftCard && leftCard.pairId === card.pairId) {
         // Correct match
-        setTimeout(() => {
-          addPoints(1)
+        setTimeout(async () => {
+          if (user) {
+            await updateUserXP(user.id, 'dutch', 1)
+          }
+          
           setCards(prev => prev.map(c => 
             (c.id === selectedLeft || c.id === cardId)
               ? { ...c, isSelected: false, isMatched: true }
@@ -141,21 +167,16 @@ export const ConnectPairsGame: React.FC<ConnectPairsGameProps> = ({ items, title
         }, 500)
       } else {
         // Wrong match
-        setCards(prev => prev.map(c => 
-          c.id === cardId || c.id === selectedLeft
-            ? { ...c, isError: true }
-            : c
-        ))
-        
+        setMistakes(prev => prev + 1)
         setTimeout(() => {
           setCards(prev => prev.map(c => 
-            c.id === cardId || c.id === selectedLeft
-              ? { ...c, isSelected: false, isError: false }
+            (c.id === selectedLeft || c.id === cardId)
+              ? { ...c, isSelected: false, isError: true }
               : c
           ))
           setSelectedLeft(null)
           setIsChecking(false)
-        }, 800)
+        }, 1000)
       }
     }
   }

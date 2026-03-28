@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { Card, GridSize, GameState, GameActions } from '../types'
-import { addPoints } from '../lib/points'
+import { updateUserXP } from '../lib/points'
 
 export type GameStore = GameState & GameActions
 
@@ -118,7 +118,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
     let newMatchedPairs = state.matchedPairs
 
     if (isMatch) {
-      addPoints(1)
       newCards = state.cards.map(c =>
         c.pairId === firstCard.pairId ? { ...c, isMatched: true, isMismatched: false } : c
       )

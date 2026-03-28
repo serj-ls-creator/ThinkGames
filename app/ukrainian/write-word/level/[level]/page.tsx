@@ -5,7 +5,8 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { UKRAINIAN_LEVELS } from '../../../../../src/constants/ukrainianWords'
-import { addPoints } from '../../../../../src/lib/points'
+import { updateUserXP, addXPWithBonus } from '../../../../../src/lib/points'
+import { useAuth } from '../../../../../src/context/AuthContext'
 
 interface LetterButton {
   letter: string
@@ -21,6 +22,15 @@ interface WriteWordGamePageProps {
 
 export default function WriteWordGamePage({ params }: WriteWordGamePageProps) {
   const router = useRouter()
+  const { user } = useAuth()
+  
+  // Перенаправление на логин если не авторизован
+  useEffect(() => {
+    if (!user) {
+      router.push('/login')
+    }
+  }, [user, router])
+  
   const [currentLevel, setCurrentLevel] = useState(parseInt(params.level))
   const [currentWordIndex, setCurrentWordIndex] = useState(0)
   const [letterButtons, setLetterButtons] = useState<LetterButton[]>([])
@@ -29,6 +39,8 @@ export default function WriteWordGamePage({ params }: WriteWordGamePageProps) {
   const [isShaking, setIsShaking] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [showLevelComplete, setShowLevelComplete] = useState(false)
+  const [mistakes, setMistakes] = useState(0)
+  const [levelMistakes, setLevelMistakes] = useState(0)
 
   const currentLevelData = UKRAINIAN_LEVELS.find(level => level.level === currentLevel)
   const currentWord = currentLevelData?.words[currentWordIndex] || ''
@@ -126,11 +138,16 @@ export default function WriteWordGamePage({ params }: WriteWordGamePageProps) {
     }
   }
 
-  const checkWord = (assembledWord: string) => {
+  const checkWord = async (assembledWord: string) => {
     if (assembledWord === currentWord) {
       // Правильное слово - без озвучки
       setShowSuccess(true)
-      addPoints(1)
+      
+      // Сохраняем +1 XP в Supabase
+      if (user) {
+        await updateUserXP(user.id, 'ukrainian', 1)
+      }
+      
       setScore(prev => prev + 1)
       
       setTimeout(() => {
@@ -139,6 +156,8 @@ export default function WriteWordGamePage({ params }: WriteWordGamePageProps) {
     } else {
       // Неправильное слово - без озвучки
       setIsShaking(true)
+      setMistakes(prev => prev + 1)
+      setLevelMistakes(prev => prev + 1)
       
       setTimeout(() => {
         resetLetters()
@@ -177,13 +196,17 @@ export default function WriteWordGamePage({ params }: WriteWordGamePageProps) {
     ))
   }
 
-  const moveToNextWord = () => {
+  const moveToNextWord = async () => {
     const wordsInLevel = currentLevelData?.words.length || 0
     
     if (currentWordIndex < wordsInLevel - 1) {
       setCurrentWordIndex(prev => prev + 1)
     } else {
-      // Уровень завершен
+      // Уровень завершен - проверяем бонусы
+      if (levelMistakes === 0 && user) {
+        // +10 XP бонус за чистую игру
+        await addXPWithBonus(user.id, 'ukrainian', 0, true) // только бонус
+      }
       setShowLevelComplete(true)
     }
   }

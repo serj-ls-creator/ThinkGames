@@ -13,24 +13,63 @@ import {
   UserProfile,
   normalizeProfile,
 } from '../src/lib/profile'
-import { getStoredPoints, POINTS_GOAL } from '../src/lib/points'
+import { getLevelProgress, getUserStats } from '../src/lib/points'
+import { getUserProfile } from '../src/lib/profile-db'
+import { useAuth } from '../src/context/AuthContext'
 
 export default function Home() {
+  const { user } = useAuth()
   const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE)
-  const [points, setPoints] = useState(0)
+  const [displayName, setDisplayName] = useState('')
+  const [userStats, setUserStats] = useState({
+    math: { currentLevel: 1, xpInLevel: 0, xpToNextLevel: 500, progressPercentage: 0 },
+    ukrainian: { currentLevel: 1, xpInLevel: 0, xpToNextLevel: 500, progressPercentage: 0 },
+    dutch: { currentLevel: 1, xpInLevel: 0, xpToNextLevel: 500, progressPercentage: 0 }
+  })
   const [isHydrated, setIsHydrated] = useState(false)
 
   useEffect(() => {
     try {
       const savedProfile = localStorage.getItem(PROFILE_STORAGE_KEY)
       setProfile(normalizeProfile(savedProfile ? JSON.parse(savedProfile) : null))
-      setPoints(getStoredPoints())
     } catch (error) {
       console.error('Failed to load user profile:', error)
     } finally {
       setIsHydrated(true)
     }
   }, [])
+
+  // Загрузка displayName из Supabase
+  useEffect(() => {
+    if (!isHydrated || !user?.id) return
+
+    const loadDisplayName = async () => {
+      const { success, data } = await getUserProfile(user.id)
+      if (success && data) {
+        setDisplayName(data.display_name || '')
+      }
+    }
+
+    loadDisplayName()
+  }, [user, isHydrated])
+
+  // Загрузка статистики из Supabase
+  useEffect(() => {
+    if (!isHydrated || !user?.id) return
+
+    const loadUserStats = async () => {
+      const { success, data } = await getUserStats(user.id)
+      if (success && data) {
+        setUserStats({
+          math: getLevelProgress(data.math_xp || 0),
+          ukrainian: getLevelProgress(data.ukrainian_xp || 0),
+          dutch: getLevelProgress(data.dutch_xp || 0)
+        })
+      }
+    }
+
+    loadUserStats()
+  }, [user, isHydrated])
 
   useEffect(() => {
     if (!isHydrated) return
@@ -68,12 +107,17 @@ export default function Home() {
           </div>
 
           <h1 className="mb-2 text-2xl font-bold text-gray-800">
-            Привіт, {profile.name}!
+            Привіт{displayName ? `, ${displayName}!` : '!'}
           </h1>
 
           <div className="space-y-2">
-            <ProgressBar current={points} total={POINTS_GOAL} showLabel={true} />
-            <p className="text-sm text-gray-600">Прогрес за очками: {points} / {POINTS_GOAL}</p>
+            <ProgressBar 
+              current={userStats.math.xpInLevel} 
+              total={userStats.math.xpToNextLevel} 
+              showLabel={true} 
+              color="bg-gradient-to-r from-blue-500 to-cyan-500"
+            />
+            <p className="text-sm text-gray-600">Математика: Рівень {userStats.math.currentLevel} - {userStats.math.xpInLevel} / {userStats.math.xpToNextLevel} XP</p>
           </div>
         </motion.div>
 

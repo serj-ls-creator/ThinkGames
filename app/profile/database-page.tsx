@@ -13,13 +13,11 @@ import {
   normalizeProfile,
 } from '../../src/lib/profile'
 import { getLevelProgress, getUserStats } from '../../src/lib/points'
-import { getUserProfile, updateUserProfile, Profile } from '../../src/lib/profile-db'
 import { useAuth } from '../../src/context/AuthContext'
 
 export default function ProfilePage() {
   const { user, loading, signOut } = useAuth()
   const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE)
-  const [dbProfile, setDbProfile] = useState<Profile | null>(null)
   const [draftName, setDraftName] = useState(DEFAULT_PROFILE.name)
   const [userStats, setUserStats] = useState({
     math: { currentLevel: 1, xpInLevel: 0, xpToNextLevel: 500, progressPercentage: 0 },
@@ -27,7 +25,6 @@ export default function ProfilePage() {
     dutch: { currentLevel: 1, xpInLevel: 0, xpToNextLevel: 500, progressPercentage: 0 }
   })
   const [isHydrated, setIsHydrated] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     try {
@@ -51,28 +48,6 @@ export default function ProfilePage() {
       console.error('Failed to save user profile:', error)
     }
   }, [isHydrated, profile])
-
-  // Загрузка профиля из Supabase
-  useEffect(() => {
-    if (!isHydrated || !user?.id) return
-
-    const loadDbProfile = async () => {
-      const { success, data } = await getUserProfile(user.id)
-      if (success && data) {
-        setDbProfile(data)
-        // Обновляем локальный профиль данными из БД
-        const previousName = profile.name
-        setProfile(prev => ({
-          ...prev,
-          name: data.display_name || prev.name,
-          avatar: data.avatar_url || prev.avatar
-        }))
-        setDraftName(data.display_name || previousName)
-      }
-    }
-
-    loadDbProfile()
-  }, [user, isHydrated])
 
   // Загрузка статистики из Supabase
   useEffect(() => {
@@ -125,48 +100,12 @@ export default function ProfilePage() {
     return { level, progress }
   }, [userStats])
 
-  const commitName = async () => {
-    if (!user?.id) return
-    
-    setIsSaving(true)
-    const newName = draftName.trim() || DEFAULT_PROFILE.name
-    
-    try {
-      // Сохраняем в Supabase
-      const { success } = await updateUserProfile(user.id, newName, profile.avatar)
-      
-      if (success) {
-        // Обновляем локальное состояние
-        setProfile((current) => ({
-          ...current,
-          name: newName,
-        }))
-        setDraftName(newName)
-      }
-    } catch (error) {
-      console.error('Failed to save profile:', error)
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  const commitAvatar = async (newAvatar: string) => {
-    if (!user?.id) return
-    
-    try {
-      // Сохраняем в Supabase
-      const { success } = await updateUserProfile(user.id, profile.name, newAvatar)
-      
-      if (success) {
-        // Обновляем локальное состояние
-        setProfile((current) => ({
-          ...current,
-          avatar: newAvatar,
-        }))
-      }
-    } catch (error) {
-      console.error('Failed to save avatar:', error)
-    }
+  const commitName = () => {
+    setProfile((current) => ({
+      ...current,
+      name: draftName.trim() || DEFAULT_PROFILE.name,
+    }))
+    setDraftName((current) => current.trim() || DEFAULT_PROFILE.name)
   }
 
   const handleSignOut = async () => {
@@ -343,17 +282,15 @@ export default function ProfilePage() {
                 value={draftName}
                 onChange={(event) => setDraftName(event.target.value.slice(0, 24))}
                 onBlur={commitName}
-                disabled={isSaving}
-                className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-base text-gray-800 outline-none transition focus:border-purple-400 focus:ring-2 focus:ring-purple-100 disabled:opacity-50"
+                className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-base text-gray-800 outline-none transition focus:border-purple-400 focus:ring-2 focus:ring-purple-100"
                 placeholder="Введи ім&apos;я"
               />
               <button
                 type="button"
                 onClick={commitName}
-                disabled={isSaving}
-                className="rounded-2xl bg-gradient-to-r from-purple-500 to-indigo-500 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:opacity-95 disabled:opacity-50"
+                className="rounded-2xl bg-gradient-to-r from-purple-500 to-indigo-500 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:opacity-95"
               >
-                {isSaving ? 'Збереження...' : 'Зберегти'}
+                Зберегти
               </button>
             </div>
           </section>
@@ -374,7 +311,7 @@ export default function ProfilePage() {
                 <button
                   key={avatar}
                   type="button"
-                  onClick={() => commitAvatar(avatar)}
+                  onClick={() => setProfile((current) => ({ ...current, avatar }))}
                   className={`flex h-12 w-full items-center justify-center rounded-2xl text-2xl transition ${
                     profile.avatar === avatar
                       ? 'bg-purple-100 ring-2 ring-purple-400 shadow-sm'
