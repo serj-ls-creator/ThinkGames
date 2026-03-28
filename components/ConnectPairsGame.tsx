@@ -4,6 +4,38 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { addPoints } from '../src/lib/points'
 
+// Отказоустойчивая функция озвучки для Chrome/Edge на Windows
+const speak = (text: string, lang: 'nl-NL' | 'uk-UA') => {
+  const synth = window.speechSynthesis;
+  
+  const performSpeak = () => {
+    synth.cancel();
+    const voices = synth.getVoices();
+    const utterance = new SpeechSynthesisUtterance(text);
+    
+    // Ищем голос максимально точно
+    const targetVoice = voices.find(v => 
+      v.lang.replace('_', '-').toLowerCase() === lang.toLowerCase() ||
+      v.lang.toLowerCase().startsWith(lang.split('-')[0])
+    );
+
+    if (targetVoice) {
+      utterance.voice = targetVoice;
+    }
+    
+    utterance.lang = lang;
+    utterance.rate = 0.9; // Чуть медленнее для четкости
+    synth.speak(utterance);
+  };
+
+  if (synth.getVoices().length === 0) {
+    // Если голоса еще не подгрузились, ждем и пробуем снова
+    synth.onvoiceschanged = () => performSpeak();
+  } else {
+    performSpeak();
+  }
+};
+
 interface PairItem {
   left: string
   right: string
@@ -29,6 +61,12 @@ export const ConnectPairsGame: React.FC<ConnectPairsGameProps> = ({ items, title
   const [selectedLeft, setSelectedLeft] = useState<string | null>(null)
   const [matchedPairs, setMatchedPairs] = useState(0)
   const [isChecking, setIsChecking] = useState(false)
+
+  // Глобальная инициализация голосов для Chrome
+  useEffect(() => {
+    // Нужно вызвать это при старте, чтобы Chrome «проснулся»
+    window.speechSynthesis.getVoices();
+  }, []);
 
   useEffect(() => {
     initializeGame()
@@ -69,7 +107,9 @@ export const ConnectPairsGame: React.FC<ConnectPairsGameProps> = ({ items, title
     if (!card || card.isMatched || isChecking) return
 
     if (card.side === 'left') {
-      // Select left card
+      // Озвучка нидерландского слова и выбор левой карточки
+      speak(card.content, 'nl-NL')
+      
       setCards(prev => prev.map(c => 
         c.id === cardId 
           ? { ...c, isSelected: true }
@@ -79,6 +119,9 @@ export const ConnectPairsGame: React.FC<ConnectPairsGameProps> = ({ items, title
       ))
       setSelectedLeft(cardId)
     } else if (card.side === 'right' && selectedLeft) {
+      // Озвучка украинского слова и проверка соответствия
+      speak(card.content, 'uk-UA')
+      
       // Check match with selected left card
       setIsChecking(true)
       const leftCard = cards.find(c => c.id === selectedLeft)

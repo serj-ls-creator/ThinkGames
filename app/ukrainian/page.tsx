@@ -8,7 +8,15 @@ const ukrainianGames: Array<{
   icon: string
   href: string
   color: 'purple' | 'orange'
-}> = [] // Пока нет игр
+}> = [
+  {
+    id: 'write-word',
+    title: 'Напиши слово',
+    icon: '✏️',
+    href: '/ukrainian/write-word',
+    color: 'purple'
+  }
+]
 
 export default function UkrainianPage() {
   return (
