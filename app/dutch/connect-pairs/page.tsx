@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { LevelSelectorSimple } from '../../../components/LevelSelectorSimple'
+import { LevelSelectorCompact } from '../../../components/LevelSelectorCompact'
 
 const dutchLevels = [
   { value: 1, label: 'Рівень 1', description: 'Базові слова' },
@@ -12,7 +12,7 @@ const dutchLevels = [
   { value: 4, label: 'Рівень 4', description: 'Тварини' },
   { value: 5, label: 'Рівень 5', description: 'Кольори' },
   { value: 6, label: 'Рівень 6', description: 'Числа' },
-  { value: 7, label: 'Рівень 7', description: 'Їжа та напої' },
+  { value: 7, label: 'Рівень7', description: 'Їжа та напої' },
   { value: 8, label: 'Рівень 8', description: 'Одяг' },
   { value: 9, label: 'Рівень 9', description: 'Погода' },
   { value: 10, label: 'Рівень 10', description: 'Час та дата' },
@@ -57,7 +57,7 @@ export default function DutchConnectPairsPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <LevelSelectorSimple
+          <LevelSelectorCompact
             levels={dutchLevels}
             colorTheme="orange"
             onLevelSelect={handleLevelSelect}

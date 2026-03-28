@@ -1,118 +1,116 @@
 'use client'
 
-import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Level, GridSizeOption, LevelSelectorProps } from '../../types'
 
+// Добавим новые опциональные пропсы для прямой синхронизации со стором
+interface LevelSelectorWithParentProps extends LevelSelectorProps {
+  selectedLevelFromParent?: number;
+  selectedGridSizeFromParent?: { rows: number; cols: number };
+}
+
 const colorThemes = {
   purple: {
-    selected: 'border-purple-500 bg-purple-50 text-purple-700',
-    default: 'border-gray-200 bg-white text-gray-700 hover:border-purple-300'
+    selected: 'border-purple-500 bg-purple-100 text-purple-700 shadow-sm',
+    default: 'border-gray-200 bg-white text-gray-700 hover:border-purple-200 hover:bg-purple-50'
   },
   orange: {
-    selected: 'border-orange-500 bg-orange-50 text-orange-700',
-    default: 'border-gray-200 bg-white text-gray-700 hover:border-orange-300'
+    selected: 'border-orange-500 bg-orange-100 text-orange-700 shadow-sm',
+    default: 'border-gray-200 bg-white text-gray-700 hover:border-orange-200 hover:bg-orange-50'
   },
   green: {
-    selected: 'border-green-500 bg-green-50 text-green-700',
-    default: 'border-gray-200 bg-white text-gray-700 hover:border-green-300'
+    selected: 'border-green-500 bg-green-100 text-green-700 shadow-sm',
+    default: 'border-gray-200 bg-white text-gray-700 hover:border-green-200 hover:bg-green-50'
   }
 }
 
-export const LevelSelector: React.FC<LevelSelectorProps> = ({ 
-  levels, 
+export const LevelSelector: React.FC<LevelSelectorWithParentProps> = ({ 
+  levels = [], 
   gridSizes = [],
   colorTheme = 'purple',
+  // Значения, которые мы передаем из page.tsx
+  selectedLevelFromParent,
+  selectedGridSizeFromParent,
   onLevelSelect,
   onGridSizeSelect
 }) => {
-  const [selectedLevel, setSelectedLevel] = useState<number>(levels[0]?.value || 1)
-  const [selectedGridSize, setSelectedGridSize] = useState<{ rows: number; cols: number }>(
-    gridSizes[0] || { rows: 3, cols: 4 }
-  )
+  // Теперь мы используем значения от родителя, если они есть. Это исправит стиль!
+  const selectedLevel = selectedLevelFromParent ?? levels[0]?.value ?? 20;
+  const selectedGridSize = selectedGridSizeFromParent ?? gridSizes[0] ?? { rows: 3, cols: 4 };
   const theme = colorThemes[colorTheme]
 
-  const handleLevelClick = (level: number) => {
-    setSelectedLevel(level)
-    onLevelSelect?.(level)
-  }
-
-  const handleGridSizeClick = (gridSize: { rows: number; cols: number }) => {
-    setSelectedGridSize(gridSize)
-    onGridSizeSelect?.(gridSize)
-  }
-
   return (
-    <div className="space-y-8">
-      {/* Уровень сложности */}
-      <div className="space-y-4">
-        <h2 className="text-2xl font-semibold text-gray-800 text-center">
-          Оберіть рівень складності
-        </h2>
-        
-        <div className="mx-auto grid max-w-3xl grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
-          {levels.map((lvl: Level, index: number) => (
-            <motion.div
+    <div className="w-full space-y-8 flex flex-col items-center">
+      {/* Секция уровней */}
+      <div className="w-full space-y-4">
+        <h2 className="text-xl md:text-2xl font-extrabold text-gray-800 text-center">Оберіть рівень</h2>
+        <div className={`
+          mx-auto w-full grid gap-3 max-w-2xl justify-center
+          ${levels.length === 3 
+            ? 'grid-cols-3' 
+            : 'grid-cols-2 sm:grid-cols-4'
+          }
+        `}>
+          {levels.map((lvl) => (
+            <motion.button
               key={lvl.value}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.1 }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                onLevelSelect?.(lvl.value);
+              }}
+              className={`
+                w-full min-h-[85px] flex flex-col items-center justify-center 
+                py-4 px-2 rounded-2xl border-2 transition-all duration-200
+                text-center
+                ${selectedLevel === lvl.value ? theme.selected : theme.default}
+              `}
             >
-              <button
-                onClick={() => handleLevelClick(lvl.value)}
-                className={`
-                  w-full rounded-xl border-2 p-4 transition-all duration-300 sm:p-5
-                  ${selectedLevel === lvl.value
-                    ? theme.selected
-                    : theme.default
-                  }
-                `}
-              >
-                <div className="mb-1 text-lg font-bold sm:mb-2 sm:text-xl">{lvl.label}</div>
-                <div className="text-xs opacity-75 sm:text-sm">{lvl.description}</div>
-              </button>
-            </motion.div>
+              <span className="text-[13px] xs:text-sm sm:text-lg font-black leading-tight text-center w-full">
+                {lvl.label}
+              </span>
+              <span className="text-[9px] sm:text-[11px] opacity-60 leading-tight whitespace-normal mt-1 text-center w-full">
+                {lvl.description}
+              </span>
+            </motion.button>
           ))}
         </div>
       </div>
 
-      {/* Размер поля */}
-      {gridSizes.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-2xl font-semibold text-gray-800 text-center">
-            Розмір поля
-          </h2>
-          
-          <div className="mx-auto grid max-w-3xl grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
-            {gridSizes.map((size: GridSizeOption, index: number) => (
-              <motion.div
-                key={`${size.rows}x${size.cols}`}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.1 + 0.3 }}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <button
-                  onClick={() => handleGridSizeClick({ rows: size.rows, cols: size.cols })}
-                  className={`
-                    w-full rounded-xl border-2 p-4 transition-all duration-300 sm:p-5
-                    ${selectedGridSize.rows === size.rows && selectedGridSize.cols === size.cols
-                      ? theme.selected
-                      : theme.default
-                    }
-                  `}
-                >
-                  <div className="mb-1 text-lg font-bold sm:mb-2 sm:text-xl">{size.label}</div>
-                  <div className="text-xs opacity-75 sm:text-sm">{size.description}</div>
-                </button>
-              </motion.div>
-            ))}
-          </div>
+      {/* Секция размеров поля */}
+      <div className="w-full space-y-4">
+        <h2 className="text-xl md:text-2xl font-extrabold text-gray-800 text-center">Розмір поля</h2>
+        <div className={`
+          mx-auto w-full grid gap-3 max-w-2xl justify-center
+          ${gridSizes.length === 3 
+            ? 'grid-cols-3' 
+            : 'grid-cols-2 sm:grid-cols-4'
+          }
+        `}>
+          {gridSizes.map((size) => (
+            <motion.button
+              key={`${size.rows}x${size.cols}`}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                onGridSizeSelect?.(size);
+              }}
+              className={`
+                w-full min-h-[85px] flex flex-col items-center justify-center 
+                py-4 px-2 rounded-2xl border-2 transition-all duration-200
+                text-center
+                ${selectedGridSize.rows === size.rows && selectedGridSize.cols === size.cols 
+                  ? theme.selected : theme.default}
+              `}
+            >
+              <span className="text-[13px] xs:text-sm sm:text-lg font-black leading-tight text-center w-full">
+                {size.label}
+              </span>
+              <span className="text-[9px] sm:text-[11px] opacity-60 leading-tight whitespace-normal mt-1 text-center w-full">
+                {size.description}
+              </span>
+            </motion.button>
+          ))}
         </div>
-      )}
+      </div>
     </div>
   )
 }

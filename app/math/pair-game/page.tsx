@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { LevelSelector } from '../../../components/LevelSelector'
+import { LevelSelector } from '../../../src/components/ui/LevelSelector'
 import { useGameStore } from '../../../store/useGameStore'
 
 const levels = [
@@ -20,6 +20,7 @@ const gridSizes = [
 
 export default function PairGameLevelPage() {
   const router = useRouter()
+  // Достаем значения и экшены из стора
   const { level, gridSize, setLevel, setGridSize, initializeGame } = useGameStore()
 
   const handleStartGame = () => {
@@ -29,7 +30,8 @@ export default function PairGameLevelPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#EEE9FF] via-[#F5F0FF] to-[#FAF5FF] px-4 py-8">
-      <div className="max-w-4xl mx-auto">
+      {/* max-w-4xl ограничивает ширину, mx-auto центрирует сам контейнер */}
+      <div className="max-w-4xl mx-auto flex flex-col items-center"> 
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -53,14 +55,27 @@ export default function PairGameLevelPage() {
           </p>
         </motion.div>
 
+        {/* LevelSelector */}
         <motion.div
+          className="flex justify-center" // Добавляем центрирование родителю
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <LevelSelector />
+          <div className="w-full max-w-2xl mx-auto">
+            <LevelSelector 
+              levels={levels} 
+              gridSizes={gridSizes} 
+              colorTheme="purple"
+              selectedLevelFromParent={level}
+              selectedGridSizeFromParent={gridSize}
+              onLevelSelect={(val) => setLevel(val)}
+              onGridSizeSelect={(size) => setGridSize(size)}
+            />
+          </div>
         </motion.div>
 
+        {/* Start Button */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

@@ -6,10 +6,10 @@ import { motion } from 'framer-motion'
 interface Level {
   value: number
   label: string
-  description: string
+  description?: string
 }
 
-interface LevelSelectorSimpleProps {
+interface LevelSelectorCompactProps {
   levels: Level[]
   colorTheme: 'purple' | 'orange'
   onLevelSelect: (level: number) => void
@@ -26,7 +26,7 @@ const colorThemes = {
   }
 }
 
-export const LevelSelectorSimple: React.FC<LevelSelectorSimpleProps> = ({ 
+export const LevelSelectorCompact: React.FC<LevelSelectorCompactProps> = ({ 
   levels, 
   colorTheme = 'purple',
   onLevelSelect 
@@ -40,16 +40,23 @@ export const LevelSelectorSimple: React.FC<LevelSelectorSimpleProps> = ({
         Оберіть рівень складності
       </h2>
       
-      <div className="grid gap-3 w-full max-w-2xl mx-auto justify-center grid-cols-2">
+      <div className={`
+        mx-auto w-full grid gap-3 max-w-2xl justify-center
+        ${levels.length > 6 
+          ? 'grid-cols-2' 
+          : levels.length === 3 
+            ? 'grid-cols-3' 
+            : 'grid-cols-2 sm:grid-cols-4'
+        }
+      `}>
         {levels.map((level, index) => (
           <motion.div
             key={level.value}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: index * 0.1 }}
+            transition={{ duration: 0.3, delay: index * 0.05 }}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="flex-1 min-w-0"
           >
             <button
               onClick={() => {
@@ -57,19 +64,20 @@ export const LevelSelectorSimple: React.FC<LevelSelectorSimpleProps> = ({
                 onLevelSelect(level.value)
               }}
               className={`
-                w-full min-h-[90px] flex flex-col items-center justify-center 
-                p-3 rounded-xl border-2 transition-all duration-300
+                w-full min-h-[80px] p-4 rounded-xl border-2 transition-all duration-300 flex items-center justify-center
                 ${selectedLevel === level.value
                   ? theme.selected
                   : theme.default
                 }
               `}
             >
-              <div className="text-xl font-black">
-                {level.label}
-              </div>
-              <div className="text-[10px] leading-tight whitespace-normal break-words">
-                {level.description}
+              <div className="text-center">
+                <div className="text-lg sm:text-xl font-black">
+                  {level.label}
+                </div>
+                <div className="text-xs opacity-60 whitespace-normal text-center">
+                  {level.description}
+                </div>
               </div>
             </button>
           </motion.div>
