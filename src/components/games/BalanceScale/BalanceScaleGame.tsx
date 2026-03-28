@@ -63,8 +63,6 @@ export const BalanceScaleGame: React.FC<BalanceScaleGameProps> = ({ maxValue }) 
   const cupTravel = isBalanced ? 0 : 10 + tiltStrength * 22
   const leftCupOffset = isBalanced ? 0 : difference > 0 ? cupTravel : -cupTravel
   const rightCupOffset = isBalanced ? 0 : difference > 0 ? -cupTravel : cupTravel
-  const leftWeightTop = 8
-  const rightWeightTop = 50
 
   useEffect(() => {
     if (!isBalanced) {
@@ -142,6 +140,12 @@ export const BalanceScaleGame: React.FC<BalanceScaleGameProps> = ({ maxValue }) 
                 <path d="M136 92H274C270 126 242 144 206 144C168 144 140 126 136 92Z" fill="#020617" />
                 <circle cx="205" cy="170" r="16" fill="#020617" />
                 <circle cx="205" cy="170" r="8" fill="white" />
+                {/* Центрируем гирю точно над чашей */}
+                <foreignObject x="153" y="15" width="104" height="70">
+                  <div className="flex h-full w-full items-end justify-center">
+                    <WeightBadge value={round.target} large={true} active={true} />
+                  </div>
+                </foreignObject>
               </g>
 
               <g transform={`translate(0 ${rightCupOffset})`}>
@@ -149,6 +153,14 @@ export const BalanceScaleGame: React.FC<BalanceScaleGameProps> = ({ maxValue }) 
                 <path d="M486 92H624C620 126 592 144 555 144C518 144 490 126 486 92Z" fill="#020617" />
                 <circle cx="555" cy="170" r="16" fill="#020617" />
                 <circle cx="555" cy="170" r="8" fill="white" />
+                {/* Контейнер для выбранных гирь */}
+                <foreignObject x="480" y="60" width="150" height="100">
+                  <div className="flex h-full w-full flex-wrap items-end justify-center gap-1">
+                    {selectedWeights.map((weight) => (
+                      <WeightBadge key={weight.id} value={weight.value} />
+                    ))}
+                  </div>
+                </foreignObject>
               </g>
 
               <circle cx="380" cy="168" r="34" fill="#020617" />
@@ -157,24 +169,6 @@ export const BalanceScaleGame: React.FC<BalanceScaleGameProps> = ({ maxValue }) 
               <rect x="320" y="286" width="120" height="12" rx="6" fill="#020617" />
               <rect x="308" y="304" width="144" height="10" rx="5" fill="#020617" />
             </svg>
-
-            <div
-              className="absolute"
-              style={{ left: '27%', top: `${leftWeightTop}px`, transform: `translate(-50%, ${leftCupOffset}px)` }}
-            >
-              <WeightBadge value={round.target} large={true} active={true} />
-            </div>
-
-            <div
-              className="absolute flex w-[120px] flex-wrap items-end justify-center gap-1"
-              style={{ left: '73%', top: `${rightWeightTop}px`, transform: `translate(-50%, ${rightCupOffset}px)` }}
-            >
-              {selectedWeights.length > 0 ? (
-                selectedWeights.map((weight) => <WeightBadge key={weight.id} value={weight.value} />)
-              ) : (
-                <div />
-              )}
-            </div>
           </div>
 
           {showWinMessage && (
