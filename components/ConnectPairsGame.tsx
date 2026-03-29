@@ -93,12 +93,14 @@ export const ConnectPairsGame: React.FC<ConnectPairsGameProps> = ({ items, title
       const handleCompletion = async () => {
         try {
           if (user?.id) {
-            console.log('DEBUG: Game completed, saving results...');
-            await saveGameResult(user.id, category, 1);
+            console.log('DEBUG: Game completed, checking for clean game bonus...');
             
+            // Сохраняем только бонус за чистую игру (без ошибок)
             if (mistakes === 0) {
               console.log('DEBUG: Bonus for clean game!');
               await saveGameResult(user.id, category, 0, true);
+            } else {
+              console.log('DEBUG: Game completed with mistakes, no bonus');
             }
           } else {
             console.log('DEBUG: No user, cannot save results');
@@ -168,19 +170,25 @@ export const ConnectPairsGame: React.FC<ConnectPairsGameProps> = ({ items, title
       
       if (leftCard && leftCard.pairId === card.pairId) {
         // Correct match
-        setTimeout(() => {
-          if (user) {
-            console.log('DEBUG: Correct match, updating UI...');
+        setTimeout(async () => {
+          try {
+            if (user) {
+              console.log('DEBUG: Correct match, saving +1 point...');
+              await saveGameResult(user.id, category, 1)
+            }
+            
+            setCards(prev => prev.map(c => 
+              (c.id === selectedLeft || c.id === cardId)
+                ? { ...c, isSelected: false, isMatched: true }
+                : c
+            ))
+            setMatchedPairs(prev => prev + 1)
+            setSelectedLeft(null)
+            setIsChecking(false)
+          } catch (error) {
+            console.error('Error saving point for match:', error);
+            setIsChecking(false);
           }
-          
-          setCards(prev => prev.map(c => 
-            (c.id === selectedLeft || c.id === cardId)
-              ? { ...c, isSelected: false, isMatched: true }
-              : c
-          ))
-          setMatchedPairs(prev => prev + 1)
-          setSelectedLeft(null)
-          setIsChecking(false)
         }, 500)
       } else {
         // Wrong match
