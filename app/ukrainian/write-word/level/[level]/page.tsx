@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { UKRAINIAN_LEVELS } from '../../../../../src/constants/ukrainianWords'
 import { updateUserXP, addXPWithBonus } from '../../../../../src/lib/points'
-import { useAuth } from '../../../../../src/context/AuthContext'
+import { useAuth } from '@/src/context/AuthContext'
 
 interface LetterButton {
   letter: string
@@ -23,13 +23,18 @@ interface WriteWordGamePageProps {
 export default function WriteWordGamePage({ params }: WriteWordGamePageProps) {
   const router = useRouter()
   const { user } = useAuth()
+  const [loading, setLoading] = useState(true)
   
-  // Перенаправление на логин если не авторизован
+  // Проверка загрузки пользователя
   useEffect(() => {
-    if (!user) {
-      router.push('/login')
+    const checkAuth = async () => {
+      // Небольшая задержка для инициализации контекста
+      await new Promise(resolve => setTimeout(resolve, 100))
+      setLoading(false)
     }
-  }, [user, router])
+    
+    checkAuth()
+  }, [])
   
   const [currentLevel, setCurrentLevel] = useState(parseInt(params.level))
   const [currentWordIndex, setCurrentWordIndex] = useState(0)
@@ -221,6 +226,15 @@ export default function WriteWordGamePage({ params }: WriteWordGamePageProps) {
     } else {
       router.push('/ukrainian/write-word/levels')
     }
+  }
+
+  if (loading || !user) {
+    return <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="text-2xl font-bold text-gray-800 mb-4">Завантаження гри...</div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+      </div>
+    </div>
   }
 
   if (!currentLevelData) {
