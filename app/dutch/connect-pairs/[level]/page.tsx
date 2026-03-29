@@ -39,6 +39,7 @@ export default function DutchConnectPairsPage({ params }: DutchConnectPairsPageP
       <ConnectPairsGame 
         items={levelData.pairs} 
         title={`Нідерландська - Рівень ${levelNum}`}
+        category="dutch"
       />
     </div>
   )

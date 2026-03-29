@@ -39,6 +39,7 @@ export default function MathConnectPairsPage({ params }: MathConnectPairsPagePro
       <ConnectPairsGame 
         items={levelData.pairs} 
         title={`Математика - Таблиця на ${levelNum === 10 ? '11-12' : levelNum}`}
+        category="math"
       />
     </div>
   )

@@ -23,10 +23,15 @@ export default function Home() {
     ukrainian: { currentLevel: 1, xpInLevel: 0, xpToNextLevel: 500, progressPercentage: 0 },
     dutch: { currentLevel: 1, xpInLevel: 0, xpToNextLevel: 500, progressPercentage: 0 }
   })
+  const [stats, setStats] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
   // Загрузка профиля и статистики из Supabase
   useEffect(() => {
-    if (!user?.id) return
+    if (!user?.id) {
+      setLoading(true)
+      return
+    }
 
     const loadData = async () => {
       // Загрузка профиля
@@ -45,14 +50,18 @@ export default function Home() {
       }
 
       // Загрузка статистики
+      console.log('Главная: загружаем статистику для юзера:', user.id)
       const { success: statsSuccess, data: statsData } = await getUserStats(user.id)
+      console.log('Главная: полученные данные статистики:', statsData)
       if (statsSuccess && statsData) {
+        setStats(statsData) // Сохраняем сырые данные
         setUserStats({
           math: getLevelProgress(statsData.math_xp || 0),
-          ukrainian: getLevelProgress(statsData.ukrainian_xp || 0),
+          ukrainian: getLevelProgress(statsData.ukrainian_xp || 0), // Используем ukrainian_xp
           dutch: getLevelProgress(statsData.dutch_xp || 0)
         })
       }
+      setLoading(false)
     }
 
     loadData()
@@ -63,11 +72,14 @@ export default function Home() {
     if (!user?.id) return
     
     const updateProgress = async () => {
+      console.log('Главная: обновляем прогресс для юзера:', user.id)
       const { success, data } = await getUserStats(user.id)
+      console.log('Главная: обновленные данные:', data)
       if (success && data) {
+        setStats(data) // Обновляем сырые данные
         setUserStats({
           math: getLevelProgress(data.math_xp || 0),
-          ukrainian: getLevelProgress(data.ukrainian_xp || 0),
+          ukrainian: getLevelProgress(data.ukrainian_xp || 0), // Используем ukrainian_xp
           dutch: getLevelProgress(data.dutch_xp || 0)
         })
       }
@@ -116,7 +128,10 @@ export default function Home() {
               showLabel={true} 
               color="bg-gradient-to-r from-blue-500 to-cyan-500"
             />
-            <p className="text-sm text-gray-600">Математика: Рівень {userStats.math.currentLevel} - {userStats.math.xpInLevel}/{userStats.math.xpToNextLevel} XP</p>
+            <p className="text-sm text-gray-600">
+              Математика: Рівень {userStats.math.currentLevel} - {loading ? '...' : `${userStats.math.xpInLevel}/${userStats.math.xpToNextLevel}`} XP
+              {stats && ` (Всього: ${stats.total_xp} XP)`}
+            </p>
           </div>
         </motion.div>
 

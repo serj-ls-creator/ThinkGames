@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { UKRAINIAN_LEVELS } from '../../../../../src/constants/ukrainianWords'
-import { updateUserXP, addXPWithBonus } from '../../../../../src/lib/points'
+import { saveGameResult } from '../../../../../src/lib/points'
 import { useAuth } from '@/src/context/AuthContext'
 
 interface LetterButton {
@@ -22,19 +22,7 @@ interface WriteWordGamePageProps {
 
 export default function WriteWordGamePage({ params }: WriteWordGamePageProps) {
   const router = useRouter()
-  const { user } = useAuth()
-  const [loading, setLoading] = useState(true)
-  
-  // Проверка загрузки пользователя
-  useEffect(() => {
-    const checkAuth = async () => {
-      // Небольшая задержка для инициализации контекста
-      await new Promise(resolve => setTimeout(resolve, 100))
-      setLoading(false)
-    }
-    
-    checkAuth()
-  }, [])
+  const { user, loading: authLoading } = useAuth()
   
   const [currentLevel, setCurrentLevel] = useState(parseInt(params.level))
   const [currentWordIndex, setCurrentWordIndex] = useState(0)
@@ -149,8 +137,10 @@ export default function WriteWordGamePage({ params }: WriteWordGamePageProps) {
       setShowSuccess(true)
       
       // Сохраняем +1 XP в Supabase
-      if (user) {
-        await updateUserXP(user.id, 'ukrainian', 1)
+      if (user?.id) {
+        await saveGameResult(user.id, 'ukrainian', 1)
+      } else {
+        console.log("Анонимный игрок, очки не шлем")
       }
       
       setScore(prev => prev + 1)
@@ -208,9 +198,12 @@ export default function WriteWordGamePage({ params }: WriteWordGamePageProps) {
       setCurrentWordIndex(prev => prev + 1)
     } else {
       // Уровень завершен - проверяем бонусы
-      if (levelMistakes === 0 && user) {
-        // +10 XP бонус за чистую игру
-        await addXPWithBonus(user.id, 'ukrainian', 0, true) // только бонус
+      if (levelMistakes === 0) {
+        if (user?.id) {
+          await saveGameResult(user.id, 'ukrainian', 0, true)
+        } else {
+          console.log("Анонимный игрок, бонусные очки не шлем")
+        }
       }
       setShowLevelComplete(true)
     }
@@ -228,7 +221,7 @@ export default function WriteWordGamePage({ params }: WriteWordGamePageProps) {
     }
   }
 
-  if (loading || !user) {
+  if (authLoading) {
     return <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center">
       <div className="text-center">
         <div className="text-2xl font-bold text-gray-800 mb-4">Завантаження гри...</div>

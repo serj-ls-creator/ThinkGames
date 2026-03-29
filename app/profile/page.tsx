@@ -29,6 +29,7 @@ export default function ProfilePage() {
     dutch: { currentLevel: 1, xpInLevel: 0, xpToNextLevel: 500, progressPercentage: 0 }
   })
   const [isSaving, setIsSaving] = useState(false)
+  const [stats, setStats] = useState<any>(null)
 
   // Загрузка профиля из Supabase
   useEffect(() => {
@@ -56,11 +57,14 @@ export default function ProfilePage() {
     if (!user?.id) return
 
     const loadUserStats = async () => {
+      console.log('Загружаем статистику для юзера:', user.id)
       const { success, data } = await getUserStats(user.id)
+      console.log('Полученные данные статистики:', data)
       if (success && data) {
+        setStats(data) // Сохраняем сырые данные
         setUserStats({
           math: getLevelProgress(data.math_xp || 0),
-          ukrainian: getLevelProgress(data.ukrainian_xp || 0),
+          ukrainian: getLevelProgress(data.ukrainian_xp || 0), // Используем ukrainian_xp
           dutch: getLevelProgress(data.dutch_xp || 0)
         })
       }
@@ -74,11 +78,14 @@ export default function ProfilePage() {
     if (!user?.id) return
     
     const updateProgress = async () => {
+      console.log('Обновляем прогресс для юзера:', user.id)
       const { success, data } = await getUserStats(user.id)
+      console.log('Обновленные данные:', data)
       if (success && data) {
+        setStats(data) // Обновляем сырые данные
         setUserStats({
           math: getLevelProgress(data.math_xp || 0),
-          ukrainian: getLevelProgress(data.ukrainian_xp || 0),
+          ukrainian: getLevelProgress(data.ukrainian_xp || 0), // Используем ukrainian_xp
           dutch: getLevelProgress(data.dutch_xp || 0)
         })
       }
@@ -91,16 +98,33 @@ export default function ProfilePage() {
     }
   }, [user?.id])
 
+  // Принудительное обновление данных
+  const refreshStats = async () => {
+    if (!user?.id) return
+    console.log('Принудительное обновление статистики для юзера:', user.id)
+    const { success, data } = await getUserStats(user.id)
+    console.log('Принудительно обновленные данные:', data)
+    if (success && data) {
+      setStats(data)
+      setUserStats({
+        math: getLevelProgress(data.math_xp || 0),
+        ukrainian: getLevelProgress(data.ukrainian_xp || 0), // Используем ukrainian_xp
+        dutch: getLevelProgress(data.dutch_xp || 0)
+      })
+    }
+  }
+
   const greetingName = useMemo(() => profile.name || DEFAULT_PROFILE.name, [profile.name])
   
-  // Глобальный уровень (сумма всех XP)
+  // Глобальный уровень (используем total_xp из базы)
   const globalLevel = useMemo(() => {
-    const totalXP = userStats.math.xpInLevel + userStats.ukrainian.xpInLevel + userStats.dutch.xpInLevel
+    const totalXP = stats?.total_xp || 0
     const level = Math.floor(totalXP / 500) + 1
     const progress = (totalXP % 500) / 500 * 100
     
+    console.log('Расчет глобального уровня:', { totalXP, level, progress })
     return { level, progress }
-  }, [userStats])
+  }, [stats])
 
   const commitName = async () => {
     if (!user?.id) return
@@ -260,7 +284,7 @@ export default function ProfilePage() {
                   height="h-1"
                 />
                 <p className="mt-1 text-xs text-gray-500">
-                  {userStats.math.xpInLevel} / {userStats.math.xpToNextLevel} XP до наступного рівня
+                  {userStats.math.xpInLevel} / {userStats.math.xpToNextLevel} XP до наступного рівня (Всього: {stats?.math_xp || 0} XP)
                 </p>
               </div>
 
@@ -279,7 +303,7 @@ export default function ProfilePage() {
                   height="h-1"
                 />
                 <p className="mt-1 text-xs text-gray-500">
-                  {userStats.dutch.xpInLevel} / {userStats.dutch.xpToNextLevel} XP до наступного рівня
+                  {userStats.dutch.xpInLevel} / {userStats.dutch.xpToNextLevel} XP до наступного рівня (Всього: {stats?.dutch_xp || 0} XP)
                 </p>
               </div>
 
@@ -298,10 +322,20 @@ export default function ProfilePage() {
                   height="h-1"
                 />
                 <p className="mt-1 text-xs text-gray-500">
-                  {userStats.ukrainian.xpInLevel} / {userStats.ukrainian.xpToNextLevel} XP до наступного рівня
+                  {userStats.ukrainian.xpInLevel} / {userStats.ukrainian.xpToNextLevel} XP до наступного рівня (Всього: {stats?.ukrainian_xp || 0} XP)
                 </p>
               </div>
             </div>
+          </div>
+          
+          {/* Кнопка обновления данных */}
+          <div className="flex justify-center">
+            <button
+              onClick={refreshStats}
+              className="rounded-2xl bg-gradient-to-r from-green-500 to-emerald-500 px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:opacity-95"
+            >
+              🔄 Оновити дані
+            </button>
           </div>
         </motion.div>
 

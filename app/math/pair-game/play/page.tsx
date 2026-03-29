@@ -6,11 +6,13 @@ import Link from 'next/link'
 import { Header } from '../../../../components/Header'
 import { GameGrid } from '../../../../components/GameGrid'
 import { useGameStore } from '../../../../store/useGameStore'
-import { saveGameProgress } from '../../../../lib/supabaseClient'
+import { saveGameResult } from '../../../../src/lib/points'
 import { calculateScore } from '../../../../lib/generatePairs'
 import { getSessionId } from '../../../../lib/utils'
+import { useAuth } from '../../../../src/context/AuthContext'
 
 export default function PairGamePlayPage() {
+  const { user } = useAuth()
   const {
     cards,
     matchedPairs,
@@ -40,10 +42,13 @@ export default function PairGamePlayPage() {
     setIsSaving(true)
     
     try {
-      const sessionId = getSessionId()
       const score = calculateScore(moves, level, gridSize)
       
-      await saveGameProgress(sessionId, level, score)
+      if (user?.id) {
+        await saveGameResult(user.id, 'math', score)
+      } else {
+        console.log('Анонимный игрок: очки не сохранены')
+      }
     } catch (error) {
       console.error('Failed to save game progress:', error)
     } finally {

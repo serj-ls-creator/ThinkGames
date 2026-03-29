@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { updateUserXP, addXPWithBonus } from '../src/lib/points'
+import { saveGameResult } from '../src/lib/points'
 import { useAuth } from '../src/context/AuthContext'
 import { useRouter } from 'next/navigation'
 
@@ -46,6 +46,7 @@ interface PairItem {
 interface ConnectPairsGameProps {
   items: PairItem[]
   title: string
+  category: 'math' | 'ukrainian' | 'dutch'
 }
 
 interface CardState {
@@ -58,8 +59,9 @@ interface CardState {
   isError: boolean
 }
 
-export const ConnectPairsGame: React.FC<ConnectPairsGameProps> = ({ items, title }) => {
+export const ConnectPairsGame: React.FC<ConnectPairsGameProps> = ({ items, title, category }) => {
   const { user } = useAuth()
+  console.log('DEBUG: ConnectPairsGame user:', user, 'category:', category)
   const [cards, setCards] = useState<CardState[]>([])
   const [selectedLeft, setSelectedLeft] = useState<string | null>(null)
   const [matchedPairs, setMatchedPairs] = useState(0)
@@ -84,16 +86,31 @@ export const ConnectPairsGame: React.FC<ConnectPairsGameProps> = ({ items, title
     initializeGame()
   }, [items])
 
-  // Бонус за чистую игру
+  // Обработка завершения игры
   useEffect(() => {
-    if (matchedPairs === items.length && items.length > 0 && user) {
-      // Игра завершена - проверяем ошибки
-      if (mistakes === 0) {
-        // +10 XP бонус за чистую игру
-        addXPWithBonus(user.id, 'dutch', 0, true) // только бонус
-      }
+    if (matchedPairs === items.length && items.length > 0) {
+      // Создаем асинхронную функцию внутри useEffect
+      const handleCompletion = async () => {
+        try {
+          if (user?.id) {
+            console.log('DEBUG: Game completed, saving results...');
+            await saveGameResult(user.id, category, 1);
+            
+            if (mistakes === 0) {
+              console.log('DEBUG: Bonus for clean game!');
+              await saveGameResult(user.id, category, 0, true);
+            }
+          } else {
+            console.log('DEBUG: No user, cannot save results');
+          }
+        } catch (error) {
+          console.error('Error in handleCompletion:', error);
+        }
+      };
+      
+      handleCompletion();
     }
-  }, [matchedPairs, items.length, mistakes, user])
+  }, [matchedPairs, items.length, user, category, mistakes])
 
   const initializeGame = () => {
     const leftCards: CardState[] = items.map((item, index) => ({
@@ -151,9 +168,9 @@ export const ConnectPairsGame: React.FC<ConnectPairsGameProps> = ({ items, title
       
       if (leftCard && leftCard.pairId === card.pairId) {
         // Correct match
-        setTimeout(async () => {
+        setTimeout(() => {
           if (user) {
-            await updateUserXP(user.id, 'dutch', 1)
+            console.log('DEBUG: Correct match, updating UI...');
           }
           
           setCards(prev => prev.map(c => 

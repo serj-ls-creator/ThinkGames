@@ -13,30 +13,6 @@ export interface GameProgress {
   created_at: string
 }
 
-export const saveGameProgress = async (
-  sessionId: string,
-  level: number,
-  score: number
-): Promise<void> => {
-  try {
-    const { error } = await supabase
-      .from('game_progress')
-      .insert({
-        session_id: sessionId,
-        level,
-        score,
-      })
-
-    if (error) {
-      console.error('Error saving game progress:', error)
-      throw error
-    }
-  } catch (error) {
-    console.error('Failed to save game progress:', error)
-    throw error
-  }
-}
-
 export const getGameProgress = async (sessionId: string) => {
   try {
     const { data, error } = await supabase
