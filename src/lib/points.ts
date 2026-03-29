@@ -4,6 +4,8 @@ export const POINTS_PER_LEVEL = 500;
 
 export const updateUserXP = async (userId: string, category: 'math' | 'ukrainian' | 'dutch', amount: number) => {
   try {
+    console.log(`DEBUG: updateUserXP called with userId=${userId}, category=${category}, amount=${amount}`);
+    
     // 1. Получаем текущий SCORE (не xp!)
     const { data: currentData, error: fetchError } = await supabase
       .from('game_progress')
@@ -11,6 +13,8 @@ export const updateUserXP = async (userId: string, category: 'math' | 'ukrainian
       .eq('user_id', userId)
       .eq('category', category)
       .maybeSingle(); // Используем maybeSingle чтобы не было ошибки если записи нет
+
+    console.log(`DEBUG: fetchError=${fetchError}, currentData=${JSON.stringify(currentData)}`);
 
     // 2. Рассчитываем новое значение, страхуясь от undefined
     const currentScore = currentData?.score || 0;
@@ -28,8 +32,9 @@ export const updateUserXP = async (userId: string, category: 'math' | 'ukrainian
       }, {
         onConflict: 'user_id,category'
       })
-      .select()
-      .single();
+      .select();
+
+    console.log(`DEBUG: upsert result - error=${error}, data=${JSON.stringify(data)}`);
 
     if (error) throw error;
     return { success: true, data };
