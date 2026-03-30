@@ -128,10 +128,11 @@ export default function Home() {
               showLabel={true} 
               color="bg-gradient-to-r from-blue-500 to-cyan-500"
             />
-            <p className="text-sm text-gray-600">
-              Математика: Lvl {userStats.math.currentLevel} - {loading ? '...' : `${userStats.math.xpInLevel}/${userStats.math.xpToNextLevel}`} XP
-              {stats && ` (Всього: ${stats.total_xp} XP)`}
-            </p>
+            {stats && (
+              <p className="text-sm text-gray-600">
+                Lvl {Math.floor(stats.total_xp / 500) + 1} - Всього: {stats.total_xp} XP
+              </p>
+            )}
           </div>
         </motion.div>
 
