@@ -11,11 +11,11 @@ const dutchGames = [
     color: 'orange' as const,
   },
   {
-    id: 'write-words',
-    title: 'Напиши слово',
-    icon: '✏️',
-    href: '/dutch',
-    color: 'orange' as const,
+    id: 'wordle',
+    title: 'Вгадай слово',
+    icon: '🎯',
+    href: '/dutch/wordle',
+    color: 'blue' as const,
   },
 ]
 
