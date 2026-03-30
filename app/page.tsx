@@ -129,7 +129,7 @@ export default function Home() {
               color="bg-gradient-to-r from-blue-500 to-cyan-500"
             />
             <p className="text-sm text-gray-600">
-              Математика: Рівень {userStats.math.currentLevel} - {loading ? '...' : `${userStats.math.xpInLevel}/${userStats.math.xpToNextLevel}`} XP
+              Математика: Lvl {userStats.math.currentLevel} - {loading ? '...' : `${userStats.math.xpInLevel}/${userStats.math.xpToNextLevel}`} XP
               {stats && ` (Всього: ${stats.total_xp} XP)`}
             </p>
           </div>
@@ -141,17 +141,22 @@ export default function Home() {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="space-y-4"
         >
-          {SECTIONS.map((subject) => (
-            <SectionCard
-              key={subject.id}
-              title={subject.title}
-              icon={subject.icon}
-              description={subject.description}
-              progress={subject.progress}
-              color={subject.color}
-              href={subject.route}
-            />
-          ))}
+          {SECTIONS.map((subject) => {
+            const subjectStats = userStats[subject.id as keyof typeof userStats];
+            return (
+              <SectionCard
+                key={subject.id}
+                title={subject.title}
+                icon={subject.icon}
+                description={subject.description}
+                progress={subjectStats.progressPercentage}
+                color={subject.color}
+                href={subject.route}
+                level={subjectStats.currentLevel}
+                xp={`${subjectStats.xpInLevel}/${subjectStats.xpToNextLevel}`}
+              />
+            )
+          })}
         </motion.div>
 
         <motion.div

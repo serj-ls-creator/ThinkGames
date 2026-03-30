@@ -130,7 +130,7 @@ export const getLevelProgress = (xp: number) => {
     currentLevel,
     xpInLevel,
     xpToNextLevel,
-    progressPercentage: (xpInLevel / xpToNextLevel) * 100
+    progressPercentage: Math.floor((xpInLevel / xpToNextLevel) * 100) // ✅ Убрал десятичные дроби
   };
 };
 

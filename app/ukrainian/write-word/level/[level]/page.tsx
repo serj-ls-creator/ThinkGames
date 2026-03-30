@@ -38,8 +38,19 @@ export default function WriteWordGamePage({ params }: WriteWordGamePageProps) {
   const currentLevelData = UKRAINIAN_LEVELS.find(level => level.level === currentLevel)
   const currentWord = currentLevelData?.words[currentWordIndex] || ''
 
-  // Отказоустойчивая функция озвучки для Chrome/Edge на Windows
+  // Проверка на мобильное устройство
+const isMobile = () => {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+// Отказоустойчивая функция озвучки для Chrome/Edge на Windows
   const speak = (text: string) => {
+    // Озвучка только на мобильных устройствах
+    if (!isMobile()) {
+      console.log('Desktop detected - speech synthesis disabled');
+      return;
+    }
+    
     const synth = window.speechSynthesis;
     const lang = 'uk-UA';
     
@@ -47,6 +58,8 @@ export default function WriteWordGamePage({ params }: WriteWordGamePageProps) {
       synth.cancel();
       const voices = synth.getVoices();
       const utterance = new SpeechSynthesisUtterance(text);
+      
+      console.log('Available voices:', voices.map(v => ({ name: v.name, lang: v.lang })));
       
       // Ищем голос максимально точно
       const targetVoice = voices.find(v => 
@@ -56,6 +69,21 @@ export default function WriteWordGamePage({ params }: WriteWordGamePageProps) {
 
       if (targetVoice) {
         utterance.voice = targetVoice;
+        console.log('Using Ukrainian voice:', targetVoice.name);
+      } else {
+        // Fallback - ищем любой славянский голос
+        const fallbackVoice = voices.find(v => 
+          v.lang.toLowerCase().includes('uk') ||
+          v.lang.toLowerCase().includes('ru') ||
+          v.lang.toLowerCase().includes('pl') ||
+          v.lang.toLowerCase().includes('cs')
+        );
+        if (fallbackVoice) {
+          utterance.voice = fallbackVoice;
+          console.log('Using fallback Slavic voice:', fallbackVoice.name, 'lang:', fallbackVoice.lang);
+        } else {
+          console.log('No Slavic voice found, using default voice');
+        }
       }
       
       utterance.lang = lang;

@@ -6,14 +6,27 @@ import { saveGameResult } from '../src/lib/points'
 import { useAuth } from '../src/context/AuthContext'
 import { useRouter } from 'next/navigation'
 
+// Проверка на мобильное устройство
+const isMobile = () => {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
 // Отказоустойчивая функция озвучки для Chrome/Edge на Windows
 const speak = (text: string, lang: 'nl-NL' | 'uk-UA') => {
+  // Озвучка только на мобильных устройствах
+  if (!isMobile()) {
+    console.log('Desktop detected - speech synthesis disabled');
+    return;
+  }
+  
   const synth = window.speechSynthesis;
   
   const performSpeak = () => {
     synth.cancel();
     const voices = synth.getVoices();
     const utterance = new SpeechSynthesisUtterance(text);
+    
+    console.log(`Available voices for ${lang}:`, voices.map(v => ({ name: v.name, lang: v.lang })));
     
     // Ищем голос максимально точно
     const targetVoice = voices.find(v => 
@@ -23,10 +36,39 @@ const speak = (text: string, lang: 'nl-NL' | 'uk-UA') => {
 
     if (targetVoice) {
       utterance.voice = targetVoice;
+      console.log(`Using ${lang} voice:`, targetVoice.name);
+    } else {
+      // Fallback для нидерландского - ищем английский голос
+      if (lang === 'nl-NL') {
+        const englishVoice = voices.find(v => 
+          v.lang.toLowerCase().startsWith('en')
+        );
+        if (englishVoice) {
+          utterance.voice = englishVoice;
+          console.log('Using English voice for Dutch text:', englishVoice.name);
+        } else {
+          console.log('No English voice found for Dutch text');
+        }
+      } else if (lang === 'uk-UA') {
+        // Fallback для украинского - ищем любой славянский голос
+        const fallbackVoice = voices.find(v => 
+          v.lang.toLowerCase().includes('uk') ||
+          v.lang.toLowerCase().includes('ru') ||
+          v.lang.toLowerCase().includes('pl') ||
+          v.lang.toLowerCase().includes('cs')
+        );
+        if (fallbackVoice) {
+          utterance.voice = fallbackVoice;
+          console.log('Using fallback Slavic voice for Ukrainian:', fallbackVoice.name, 'lang:', fallbackVoice.lang);
+        } else {
+          console.log('No Slavic voice found for Ukrainian text');
+        }
+      }
     }
     
     utterance.lang = lang;
     utterance.rate = 0.9; // Чуть медленнее для четкости
+    
     synth.speak(utterance);
   };
 

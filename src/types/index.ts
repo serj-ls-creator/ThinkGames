@@ -122,6 +122,8 @@ export interface SectionCardProps {
   progress: number
   color: string
   href: string
+  level?: number
+  xp?: string
   games?: { name: string; href: string }[]
 }
 
