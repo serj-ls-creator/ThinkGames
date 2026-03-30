@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { saveGameResult } from '../src/lib/points'
 import { useAuth } from '../src/context/AuthContext'
@@ -16,6 +16,12 @@ const speak = (text: string, lang: 'nl-NL' | 'uk-UA') => {
   // Озвучка только на мобильных устройствах
   if (!isMobile()) {
     console.log('Desktop detected - speech synthesis disabled');
+    return;
+  }
+  
+  // Проверка доступности Speech Synthesis
+  if (typeof window === 'undefined' || !window.speechSynthesis) {
+    console.log('Speech synthesis not available');
     return;
   }
   
@@ -110,6 +116,7 @@ export const ConnectPairsGame: React.FC<ConnectPairsGameProps> = ({ items, title
   const [isChecking, setIsChecking] = useState(false)
   const [mistakes, setMistakes] = useState(0)
   const router = useRouter()
+  const hasSavedResult = useRef(false) // Защита от множественных сохранений
   
   // Перенаправление на логин если не авторизован
   useEffect(() => {
@@ -121,7 +128,9 @@ export const ConnectPairsGame: React.FC<ConnectPairsGameProps> = ({ items, title
   // Глобальная инициализация голосов для Chrome
   useEffect(() => {
     // Нужно вызвать это при старте, чтобы Chrome «проснулся»
-    window.speechSynthesis.getVoices();
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.getVoices();
+    }
   }, []);
 
   useEffect(() => {
@@ -130,23 +139,13 @@ export const ConnectPairsGame: React.FC<ConnectPairsGameProps> = ({ items, title
 
   // Обработка завершения игры
   useEffect(() => {
-    if (matchedPairs === items.length && items.length > 0) {
-      // Создаем асинхронную функцию внутри useEffect
+    if (matchedPairs === items.length && items.length > 0 && user?.id && !hasSavedResult.current) {
+      hasSavedResult.current = true;
+      
       const handleCompletion = async () => {
         try {
-          if (user?.id) {
-            console.log('DEBUG: Game completed, checking for clean game bonus...');
-            
-            // Сохраняем только бонус за чистую игру (без ошибок)
-            if (mistakes === 0) {
-              console.log('DEBUG: Bonus for clean game!');
-              await saveGameResult(user.id, category, 0, true);
-            } else {
-              console.log('DEBUG: Game completed with mistakes, no bonus');
-            }
-          } else {
-            console.log('DEBUG: No user, cannot save results');
-          }
+          console.log('!!! CONNECT PAIRS GAME COMPLETE: Sending 10 XP !!!');
+          await saveGameResult(user.id, category, 10, mistakes === 0);
         } catch (error) {
           console.error('Error in handleCompletion:', error);
         }
@@ -154,7 +153,7 @@ export const ConnectPairsGame: React.FC<ConnectPairsGameProps> = ({ items, title
       
       handleCompletion();
     }
-  }, [matchedPairs, items.length, user, category, mistakes])
+  }, [matchedPairs, items.length, user?.id, category, mistakes])
 
   const initializeGame = () => {
     const leftCards: CardState[] = items.map((item, index) => ({
@@ -212,25 +211,15 @@ export const ConnectPairsGame: React.FC<ConnectPairsGameProps> = ({ items, title
       
       if (leftCard && leftCard.pairId === card.pairId) {
         // Correct match
-        setTimeout(async () => {
-          try {
-            if (user) {
-              console.log('DEBUG: Correct match, saving +1 point...');
-              await saveGameResult(user.id, category, 1)
-            }
-            
-            setCards(prev => prev.map(c => 
-              (c.id === selectedLeft || c.id === cardId)
-                ? { ...c, isSelected: false, isMatched: true }
-                : c
-            ))
-            setMatchedPairs(prev => prev + 1)
-            setSelectedLeft(null)
-            setIsChecking(false)
-          } catch (error) {
-            console.error('Error saving point for match:', error);
-            setIsChecking(false);
-          }
+        setTimeout(() => {
+          setCards(prev => prev.map(c => 
+            (c.id === selectedLeft || c.id === cardId)
+              ? { ...c, isSelected: false, isMatched: true }
+              : c
+          ))
+          setMatchedPairs(prev => prev + 1)
+          setSelectedLeft(null)
+          setIsChecking(false)
         }, 500)
       } else {
         // Wrong match

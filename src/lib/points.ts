@@ -150,7 +150,8 @@ export const saveGameResult = async (userId: string | null, category: 'math' | '
     return { success: true, data: null }; // Возвращаем успех чтобы не ломать логику игры
   }
   
-  const totalAmount = isCleanGame ? amount + 10 : amount;
+  // По правилам всегда сохраняем только amount, без бонусов за чистую игру
+  const totalAmount = amount;
   console.log('DEBUG: Final amount to save:', totalAmount);
   
   const result = await updateUserXP(userId, category, totalAmount);

@@ -2,8 +2,10 @@
 
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useRef } from 'react'
 import { BALANCE_LEVELS, BalanceWeight, generateBalanceRound } from '../../../lib/balanceScale'
+import { saveGameResult } from '../../../lib/points'
+import { useAuth } from '../../../context/AuthContext'
 
 interface BalanceScaleGameProps {
   maxValue: number
@@ -42,9 +44,11 @@ const WeightBadge = ({
 )
 
 export const BalanceScaleGame: React.FC<BalanceScaleGameProps> = ({ maxValue }) => {
+  const { user } = useAuth()
   const [round, setRound] = useState(() => generateBalanceRound(maxValue))
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [showWinMessage, setShowWinMessage] = useState(false)
+  const hasSaved = useRef(false) // Защита от множественных сохранений
 
   const selectedWeights = useMemo(
     () => round.availableWeights.filter((weight) => selectedIds.includes(weight.id)),
@@ -77,6 +81,15 @@ export const BalanceScaleGame: React.FC<BalanceScaleGameProps> = ({ maxValue }) 
     return () => window.clearTimeout(timeoutId)
   }, [isBalanced, round.target, selectedIds])
 
+  // Сохранение очков при победе
+  useEffect(() => {
+    if (showWinMessage && !hasSaved.current && user?.id) {
+      hasSaved.current = true;
+      saveGameResult(user.id, 'math', 10, false);
+      console.log('!!! BALANCE SCALE COMPLETE: 10 XP SENT !!!');
+    }
+  }, [showWinMessage, user?.id]);
+
   const handleWeightToggle = (weight: BalanceWeight) => {
     if (showWinMessage) return
 
@@ -89,6 +102,7 @@ export const BalanceScaleGame: React.FC<BalanceScaleGameProps> = ({ maxValue }) 
     setRound(generateBalanceRound(maxValue))
     setSelectedIds([])
     setShowWinMessage(false)
+    hasSaved.current = false // Сброс флага сохранения
   }
 
   return (

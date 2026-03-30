@@ -122,19 +122,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
         c.pairId === firstCard.pairId ? { ...c, isMatched: true, isMismatched: false } : c
       )
       newMatchedPairs = state.matchedPairs + 1
-      
-      // Сохраняем +1 балл за правильный ответ
-      try {
-        const { useAuth } = await import('../context/AuthContext')
-        const { user } = useAuth()
-        if (user?.id) {
-          const { saveGameResult } = await import('../lib/points')
-          await saveGameResult(user.id, 'math', 1)
-          console.log('DEBUG: +1 балл сохранен за правильный ответ в математике')
-        }
-      } catch (error) {
-        console.error('Ошибка сохранения балла:', error)
-      }
     } else {
       newCards = state.cards.map(c =>
         c.id === firstId || c.id === secondId

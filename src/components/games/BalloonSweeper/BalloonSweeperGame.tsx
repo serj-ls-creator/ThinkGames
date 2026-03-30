@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect, useRef } from 'react'
 import {
   BalloonCell,
   BalloonDifficulty,
@@ -11,6 +11,8 @@ import {
   openArea,
   revealAllMines,
 } from '../../../lib/balloonSweeper'
+import { saveGameResult } from '../../../lib/points'
+import { useAuth } from '../../../context/AuthContext'
 
 type PlayMode = 'open' | 'flag'
 type GameStatus = 'idle' | 'playing' | 'won' | 'lost'
@@ -63,11 +65,13 @@ const getCellTextSize = (difficulty: BalloonDifficulty) => {
 }
 
 export const BalloonSweeperGame: React.FC<BalloonSweeperGameProps> = ({ difficulty }) => {
+  const { user } = useAuth()
   const [board, setBoard] = useState<BalloonCell[]>(() => createEmptyBoard(difficulty))
   const [status, setStatus] = useState<GameStatus>('idle')
   const [mode, setMode] = useState<PlayMode>('open')
   const [moves, setMoves] = useState(0)
   const [isBoardReady, setIsBoardReady] = useState(false)
+  const hasSaved = useRef(false) // Защита от множественных сохранений
 
   const flaggedCount = useMemo(() => board.filter((cell) => cell.isFlagged).length, [board])
   const hiddenSafeCells = useMemo(
@@ -77,12 +81,22 @@ export const BalloonSweeperGame: React.FC<BalloonSweeperGameProps> = ({ difficul
   const boardMaxWidth = getBoardMaxWidth(difficulty)
   const cellTextSize = getCellTextSize(difficulty)
 
+  // Сохранение очков при победе
+  useEffect(() => {
+    if (status === 'won' && !hasSaved.current && user?.id) {
+      hasSaved.current = true;
+      saveGameResult(user.id, 'math', 10, false);
+      console.log('!!! BALLOON SWEEPER COMPLETE: 10 XP SENT !!!');
+    }
+  }, [status, user?.id]);
+
   const resetGame = () => {
     setBoard(createEmptyBoard(difficulty))
     setStatus('idle')
     setMode('open')
     setMoves(0)
     setIsBoardReady(false)
+    hasSaved.current = false // Сброс флага сохранения
   }
 
   const handleCellPress = (cell: BalloonCell) => {

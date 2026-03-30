@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -34,25 +34,31 @@ export default function WriteWordGamePage({ params }: WriteWordGamePageProps) {
   const [showLevelComplete, setShowLevelComplete] = useState(false)
   const [mistakes, setMistakes] = useState(0)
   const [levelMistakes, setLevelMistakes] = useState(0)
+  const hasSaved = useRef(false) // Защита от множественных сохранений
 
   const currentLevelData = UKRAINIAN_LEVELS.find(level => level.level === currentLevel)
   const currentWord = currentLevelData?.words[currentWordIndex] || ''
 
   // Проверка на мобильное устройство
-const isMobile = () => {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-}
+  const isMobile = () => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  }
 
-// Отказоустойчивая функция озвучки для Chrome/Edge на Windows
-  const speak = (text: string) => {
-    // Озвучка только на мобильных устройствах
+  // Отказоустойчивая функция озвучки для Chrome/Edge на Windows
+  const speak = (text: string, lang: string = 'uk-UA') => {
+    // Проверка на мобильное устройство
     if (!isMobile()) {
       console.log('Desktop detected - speech synthesis disabled');
       return;
     }
     
+    // Проверка доступности Speech Synthesis
+    if (typeof window === 'undefined' || !window.speechSynthesis) {
+      console.log('Speech synthesis not available');
+      return;
+    }
+    
     const synth = window.speechSynthesis;
-    const lang = 'uk-UA';
     
     const performSpeak = () => {
       synth.cancel();
@@ -102,7 +108,9 @@ const isMobile = () => {
   // Глобальная инициализация голосов для Chrome
   useEffect(() => {
     // Нужно вызвать это при старте, чтобы Chrome «проснулся»
-    window.speechSynthesis.getVoices();
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.getVoices();
+    }
   }, []);
 
   // Инициализация игры
@@ -120,6 +128,8 @@ const isMobile = () => {
   }, [currentWord])
 
   const initializeWord = () => {
+    hasSaved.current = false; // Сброс при начале нового слова
+    setShowLevelComplete(false); // Сброс состояния завершения уровня
     const letters = currentWord.split('')
     const shuffledLetters = [...letters].sort(() => Math.random() - 0.5)
     
@@ -160,16 +170,15 @@ const isMobile = () => {
   }
 
   const checkWord = async (assembledWord: string) => {
+    // Защита от множественных вызовов
+    if (showSuccess) {
+      console.log('Already checking word, skipping...');
+      return;
+    }
+    
     if (assembledWord === currentWord) {
       // Правильное слово - без озвучки
       setShowSuccess(true)
-      
-      // Сохраняем +1 XP в Supabase
-      if (user?.id) {
-        await saveGameResult(user.id, 'ukrainian', 1)
-      } else {
-        console.log("Анонимный игрок, очки не шлем")
-      }
       
       setScore(prev => prev + 1)
       
@@ -220,28 +229,38 @@ const isMobile = () => {
   }
 
   const moveToNextWord = async () => {
+    // Дополнительная защита от множественных вызовов
+    if (hasSaved.current) {
+      console.log('Already saved, skipping...');
+      return;
+    }
+    
     const wordsInLevel = currentLevelData?.words.length || 0
     
     if (currentWordIndex < wordsInLevel - 1) {
       setCurrentWordIndex(prev => prev + 1)
     } else {
-      // Уровень завершен - проверяем бонусы
-      if (levelMistakes === 0) {
-        if (user?.id) {
-          await saveGameResult(user.id, 'ukrainian', 0, true)
-        } else {
-          console.log("Анонимный игрок, бонусные очки не шлем")
-        }
+      // Уровень завершен - сохраняем 10 очков
+      if (user?.id && !hasSaved.current) {
+        hasSaved.current = true;
+        await saveGameResult(user.id, 'ukrainian', 10, levelMistakes === 0)
+        console.log('!!! UKRAINIAN WRITE WORD COMPLETE: 10 XP SENT !!!');
+      } else {
+        console.log("Анонимный игрок, очки не шлем")
       }
       setShowLevelComplete(true)
     }
   }
 
   const handleBackToLevels = () => {
+    hasSaved.current = false; // Сброс при переходе
+    setShowLevelComplete(false); // Сброс состояния
     router.push('/ukrainian/write-word/levels')
   }
 
   const handleNextLevel = () => {
+    hasSaved.current = false; // Сброс при переходе
+    setShowLevelComplete(false); // Сброс состояния
     if (currentLevel < 10) {
       router.push(`/ukrainian/write-word/level/${currentLevel + 1}`)
     } else {
