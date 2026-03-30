@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { Header } from '../../../../components/Header'
@@ -25,6 +25,7 @@ export default function PairGamePlayPage() {
   } = useGameStore()
 
   const [isSaving, setIsSaving] = useState(false)
+  const hasSaved = useRef(false) // Защита от множественных сохранений
 
   useEffect(() => {
     if (!cards.length) {
@@ -39,13 +40,15 @@ export default function PairGamePlayPage() {
   }, [gameCompleted, isSaving])
 
   const handleGameComplete = async () => {
+    if (hasSaved.current) return; // Защита от множественных вызовов
+    
     setIsSaving(true)
+    hasSaved.current = true
     
     try {
-      const score = calculateScore(moves, level, gridSize)
-      
       if (user?.id) {
-        await saveGameResult(user.id, 'math', score)
+        await saveGameResult(user.id, 'math', 10, false) // Фиксированные 10 очков
+        console.log('!!! PAIR GAME COMPLETE: 10 XP SENT !!!');
       } else {
         console.log('Анонимный игрок: очки не сохранены')
       }
@@ -59,6 +62,7 @@ export default function PairGamePlayPage() {
   const handleResetGame = () => {
     resetGame()
     initializeGame(level, gridSize)
+    hasSaved.current = false // Сброс флага сохранения
   }
 
   return (
