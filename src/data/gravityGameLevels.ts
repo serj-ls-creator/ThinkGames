@@ -25,22 +25,22 @@ export const GRAVITY_LEVELS_DATA: GravityLevelData[] = [
         planetNumber: 5,
         correctAnswers: [
           { expression: "2+3", result: 5 },
-          { expression: "7-2", result: 5 },
+          { expression: "9-4", result: 5 },
           { expression: "1+4", result: 5 }
         ],
         wrongAnswers: [
           { expression: "2+2", result: 4 },
-          { expression: "3+3", result: 6 },
+          { expression: "7-1", result: 6 },
           { expression: "8-2", result: 6 },
-          { expression: "1+3", result: 4 }
+          { expression: "0+4", result: 4 }
         ]
       },
       {
         planetNumber: 6,
         correctAnswers: [
-          { expression: "3+3", result: 6 },
+          { expression: "4+2", result: 6 },
           { expression: "8-2", result: 6 },
-          { expression: "2+4", result: 6 },
+          { expression: "1+5", result: 6 },
           { expression: "9-3", result: 6 }
         ],
         wrongAnswers: [
@@ -105,7 +105,7 @@ export const GRAVITY_LEVELS_DATA: GravityLevelData[] = [
         ],
         wrongAnswers: [
           { expression: "4+5", result: 9 },
-          { expression: "6+6", result: 12 },
+          { expression: "6x6", result: 12 },
           { expression: "11-2", result: 9 },
           { expression: "14-3", result: 11 }
         ]
@@ -125,9 +125,24 @@ export const GRAVITY_LEVELS_DATA: GravityLevelData[] = [
         ],
         wrongAnswers: [
           { expression: "2+3", result: 5 },
-          { expression: "3+3", result: 6 },
+          { expression: "4x4", result: 16 },
+          { expression: "7-2", result: 5 },
+          { expression: "3+5", result: 8 }
+        ]
+      },
+      {
+        planetNumber: 7,
+        correctAnswers: [
+          { expression: "2+5", result: 7 },
+          { expression: "1x7", result: 7 },
+          { expression: "10-3", result: 7 },
+          { expression: "9-2", result: 7 }
+        ],
+        wrongAnswers: [
+          { expression: "2+3", result: 5 },
           { expression: "4x2", result: 8 },
-          { expression: "7-2", result: 5 }
+          { expression: "12-2", result: 10 },
+          { expression: "19-8", result: 11 }
         ]
       },
       {
@@ -140,7 +155,7 @@ export const GRAVITY_LEVELS_DATA: GravityLevelData[] = [
         ],
         wrongAnswers: [
           { expression: "3+4", result: 7 },
-          { expression: "3x3", result: 9 },
+          { expression: "5x3", result: 15 },
           { expression: "9-2", result: 7 },
           { expression: "12-3", result: 9 }
         ]
@@ -314,17 +329,8 @@ export function getRandomLevelVariant(level: number): LevelVariant {
     throw new Error(`Level ${level} not found`)
   }
   
-  // Используем простую последовательность вариантов: 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, потом снова 5
-  const variantSequence = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] // Последовательность вариантов
-  const targetNumber = variantSequence[currentVariantIndex]
-  const selectedVariant = levelData.variants.find(variant => variant.planetNumber === targetNumber)
-  
-  if (!selectedVariant) {
-    // Если не нашли вариант с таким числом, берем первый
-    return levelData.variants[0]
-  }
-  
-  return selectedVariant
+  // Используем индекс для детерминированного выбора варианта
+  return levelData.variants[currentVariantIndex % levelData.variants.length]
 }
 
 // Функция для переключения на следующий вариант
@@ -335,17 +341,9 @@ export function getNextVariant(level: number): LevelVariant {
   }
   
   // Увеличиваем индекс и переходим к следующему варианту
-  currentVariantIndex = (currentVariantIndex + 1) % 15
+  currentVariantIndex = (currentVariantIndex + 1) % levelData.variants.length
   
-  const variantSequence = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-  const targetNumber = variantSequence[currentVariantIndex]
-  const selectedVariant = levelData.variants.find(variant => variant.planetNumber === targetNumber)
-  
-  if (!selectedVariant) {
-    return levelData.variants[0]
-  }
-  
-  return selectedVariant
+  return levelData.variants[currentVariantIndex]
 }
 
 // Функция для сброса индекса варианта

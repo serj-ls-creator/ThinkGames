@@ -46,9 +46,8 @@ export default function GravitySlingshotPage() {
                     Рівень {level.level}
                   </h3>
                   <div className="text-sm text-gray-600 space-y-1">
-                    <p>Число планети: {level.variants[0]?.planetNumber || '?'}</p>
-                    <p>Астероїдів: {level.variants[0]?.correctAnswers.length + level.variants[0]?.wrongAnswers.length || '?'}</p>
-                    <p>Правильних: {level.variants[0]?.correctAnswers.length || '?'}</p>
+                    <p>Астероїдів: {level.level === 1 ? 3 : level.level === 2 ? 4 : 5}</p>
+                    <p>Правильних: {level.level === 1 ? 1 : 2}</p>
                     <p>Операції: {['+', '-', '*', '/'].slice(0, level.level + 1).join(', ')}</p>
                   </div>
                 </div>
