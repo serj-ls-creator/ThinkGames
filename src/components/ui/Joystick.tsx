@@ -193,9 +193,7 @@ export default function Joystick({
           height: stickSize,
           left: '50%',
           top: '50%',
-          transform: `translate(calc(-50% + ${position.x}px), calc(-50% + ${position.y}px))`,
-          x: 0,
-          y: 0
+          transform: 'translate(-50%, -50%)'
         }}
         animate={{
           x: position.x,
