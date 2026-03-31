@@ -11,7 +11,6 @@ import {
   GameState, 
   Ship, 
   Asteroid,
-  GRAVITY_LEVELS,
   PLANET_RADIUS,
   SHIP_RADIUS,
   ASTEROID_RADIUS
