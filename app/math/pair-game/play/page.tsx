@@ -68,7 +68,7 @@ export default function PairGamePlayPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#EEE9FF] via-[#F5F0FF] to-[#FAF5FF] px-4 py-8">
-      <Header />
+      <Header title="Знайди пару" />
       
       <div className="max-w-4xl mx-auto">
         {/* Header */}
