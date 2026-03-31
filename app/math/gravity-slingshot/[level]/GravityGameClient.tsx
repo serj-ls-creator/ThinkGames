@@ -5,9 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../../../../src/context/AuthContext'
 import { saveGameResult } from '../../../../src/lib/points'
 import GameEndModal from '../../../../src/components/GameEndModal'
+import Joystick from '../../../../src/components/ui/Joystick'
 import { 
   generateLevel, 
   updatePhysics, 
+  applyBoundaryForces, 
   GameState, 
   Ship, 
   Asteroid,
@@ -27,6 +29,26 @@ export default function GravityGameClient({ level }: { level: number }) {
   
   const [gameState, setGameState] = useState<GameState>(() => generateLevel(level))
   const [isPaused, setIsPaused] = useState(false)
+  const [joystickVector, setJoystickVector] = useState({ x: 0, y: 0 })
+  const [isMobile, setIsMobile] = useState(false)
+  const [wallHit, setWallHit] = useState(false)
+
+  // Определяем мобильное устройство
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = true // Временно для всех устройств
+      setIsMobile(mobile)
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Обработка джойстика
+  const handleJoystickMove = useCallback((vector: { x: number, y: number }) => {
+    setJoystickVector(vector)
+  }, [])
 
   // Сброс игры
   const resetGame = useCallback(() => {
@@ -55,59 +77,20 @@ export default function GravityGameClient({ level }: { level: number }) {
     }
   }, [])
 
-  // Обработка касаний для мобильных устройств
+  // Обработка касаний для мобильных устройств (полностью отключена - используем только джойстик)
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    const touch = e.touches[0]
-    const canvas = canvasRef.current
-    if (!canvas) return
-
-    const rect = canvas.getBoundingClientRect()
-    const x = touch.clientX - rect.left - rect.width / 2
-    const y = touch.clientY - rect.top - rect.height / 2
-
-    // Определяем, где было касание относительно центра
-    const angle = Math.atan2(y, x)
-    
-    setGameState(prev => ({
-      ...prev,
-      ship: {
-        ...prev.ship,
-        angle: angle,
-        thrust: true
-      }
-    }))
+    // Полностью отключаем touch-управление на всех устройствах
+    return
   }, [])
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    const touch = e.touches[0]
-    const canvas = canvasRef.current
-    if (!canvas) return
-
-    const rect = canvas.getBoundingClientRect()
-    const x = touch.clientX - rect.left - rect.width / 2
-    const y = touch.clientY - rect.top - rect.height / 2
-
-    // Обновляем угол полета в реальном времени
-    const angle = Math.atan2(y, x)
-    
-    setGameState(prev => ({
-      ...prev,
-      ship: {
-        ...prev.ship,
-        angle: angle,
-        thrust: true
-      }
-    }))
+    // Полностью отключаем touch-управление на всех устройствах
+    return
   }, [])
 
   const handleTouchEnd = useCallback(() => {
-    setGameState(prev => ({
-      ...prev,
-      ship: {
-        ...prev.ship,
-        thrust: false
-      }
-    }))
+    // Полностью отключаем touch-управление на всех устройствах
+    return
   }, [])
 
   // Сохранение очков при победе
@@ -136,21 +119,74 @@ export default function GravityGameClient({ level }: { level: number }) {
       const deltaTime = Math.min((currentTime - lastTimeRef.current) / 1000, 0.1)
       lastTimeRef.current = currentTime
 
-      // Обновляем состояние корабля на основе клавиатуры
+      // Обновляем состояние корабля на основе клавиатуры и джойстика
       setGameState(prevState => {
         const newState = { ...prevState }
         const ship = { ...newState.ship }
 
-        // Управление кораблем
-        if (keysRef.current.has('arrowleft') || keysRef.current.has('a')) {
-          ship.angle -= 0.1
+        // Управление кораблем (джойстик всегда работает, клавиатура - когда не touch)
+        const hasTouch = 'ontouchstart' in window
+        
+        if (!hasTouch) {
+          // Клавиатура для десктопа
+          if (keysRef.current.has('arrowleft') || keysRef.current.has('a')) {
+            ship.angle -= 0.1
+          }
+          if (keysRef.current.has('arrowright') || keysRef.current.has('d')) {
+            ship.angle += 0.1
+          }
+          ship.thrust = keysRef.current.has('arrowup') || keysRef.current.has('w') || keysRef.current.has(' ')
         }
-        if (keysRef.current.has('arrowright') || keysRef.current.has('d')) {
-          ship.angle += 0.1
+        
+        // Джойстик работает всегда (и на десктопе, и на мобильных)
+        if (joystickVector.x !== 0 || joystickVector.y !== 0) {
+          // Вычисляем угол на основе вектора джойстика
+          ship.angle = Math.atan2(joystickVector.y, joystickVector.x)
+          // Сила тяги пропорциональна расстоянию от центра
+          const joystickMagnitude = Math.sqrt(joystickVector.x * joystickVector.x + joystickVector.y * joystickVector.y)
+          ship.thrust = joystickMagnitude > 0.1
+        } else {
+          // Если джойстик не используется, выключаем тягу
+          if (hasTouch) {
+            ship.thrust = false
+          }
         }
-        ship.thrust = keysRef.current.has('arrowup') || keysRef.current.has('w') || keysRef.current.has(' ')
 
         newState.ship = ship
+
+        // ПРЯМОЕ ЗАМЕДЛЕНИЕ ПЕРЕД ОТРИСОВКОЙ (максимально простой подход)
+        const halfWidth = 290  // Чуть меньше реальных границ
+        const halfHeight = 190 // Чуть меньше реальных границ
+        
+        let wallHit = false
+        
+        if (newState.ship.x - SHIP_RADIUS < -halfWidth) {
+          newState.ship.x = -halfWidth + SHIP_RADIUS
+          newState.ship.vx = Math.abs(newState.ship.vx) * 0.25 // Просто замедляем в 4 раза
+          newState.ship.vy *= 0.25
+          wallHit = true
+        }
+        if (newState.ship.x + SHIP_RADIUS > halfWidth) {
+          newState.ship.x = halfWidth - SHIP_RADIUS
+          newState.ship.vx = -Math.abs(newState.ship.vx) * 0.25 // Просто замедляем в 4 раза
+          newState.ship.vy *= 0.25
+          wallHit = true
+        }
+        if (newState.ship.y - SHIP_RADIUS < -halfHeight) {
+          newState.ship.y = -halfHeight + SHIP_RADIUS
+          newState.ship.vy = Math.abs(newState.ship.vy) * 0.25 // Просто замедляем в 4 раза
+          newState.ship.vx *= 0.25
+          wallHit = true
+        }
+        if (newState.ship.y + SHIP_RADIUS > halfHeight) {
+          newState.ship.y = halfHeight - SHIP_RADIUS
+          newState.ship.vy = -Math.abs(newState.ship.vy) * 0.25 // Просто замедляем в 4 раза
+          newState.ship.vx *= 0.25
+          wallHit = true
+        }
+
+        // Обновляем wallHit в состоянии
+        newState.wallHit = wallHit
 
         // Обновляем физику
         return updatePhysics(newState, deltaTime * 60) // Нормализуем deltaTime
@@ -166,7 +202,7 @@ export default function GravityGameClient({ level }: { level: number }) {
         cancelAnimationFrame(animationRef.current)
       }
     }
-  }, [isPaused, gameState.status])
+  }, [isPaused, gameState.status, joystickVector]) // Добавил joystickVector в зависимости
 
   // Рендеринг игры
   useEffect(() => {
@@ -187,9 +223,9 @@ export default function GravityGameClient({ level }: { level: number }) {
 
     // Рисуем планету
     const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, PLANET_RADIUS)
-    gradient.addColorStop(0, '#8B5CF6')
-    gradient.addColorStop(0.7, '#7C3AED')
-    gradient.addColorStop(1, '#6D28D9')
+    gradient.addColorStop(0, '#FCD34D')
+    gradient.addColorStop(0.7, '#F59E0B')
+    gradient.addColorStop(1, '#D97706')
     
     ctx.fillStyle = gradient
     ctx.beginPath()
@@ -197,7 +233,7 @@ export default function GravityGameClient({ level }: { level: number }) {
     ctx.fill()
 
     // Рисуем число на планете
-    ctx.fillStyle = 'white'
+    ctx.fillStyle = '#1F2937'
     ctx.font = 'bold 32px sans-serif'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
@@ -208,15 +244,10 @@ export default function GravityGameClient({ level }: { level: number }) {
       ctx.save()
       ctx.translate(asteroid.x, asteroid.y)
 
-      // Фон астероида
+      // Фон астероида с индивидуальным цветом
       const asteroidGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, asteroid.radius)
-      if (asteroid.isCorrect) {
-        asteroidGradient.addColorStop(0, '#10B981')
-        asteroidGradient.addColorStop(1, '#059669')
-      } else {
-        asteroidGradient.addColorStop(0, '#EF4444')
-        asteroidGradient.addColorStop(1, '#DC2626')
-      }
+      asteroidGradient.addColorStop(0, asteroid.color)
+      asteroidGradient.addColorStop(1, asteroid.color)
       
       ctx.fillStyle = asteroidGradient
       ctx.beginPath()
@@ -233,13 +264,16 @@ export default function GravityGameClient({ level }: { level: number }) {
       ctx.restore()
     })
 
-    // Рисуем корабль
+    // Рисуем корабль с учетом wallHit
     ctx.save()
     ctx.translate(gameState.ship.x, gameState.ship.y)
     ctx.rotate(gameState.ship.angle)
 
+    // Корабль меняет цвет при столкновении со стеной
+    const shipColor = gameState.wallHit ? '#EF4444' : '#3B82F6'
+    
     // Корпус корабля
-    ctx.fillStyle = '#3B82F6'
+    ctx.fillStyle = shipColor
     ctx.beginPath()
     ctx.moveTo(SHIP_RADIUS, 0)
     ctx.lineTo(-SHIP_RADIUS, -SHIP_RADIUS * 0.7)
@@ -248,9 +282,14 @@ export default function GravityGameClient({ level }: { level: number }) {
     ctx.closePath()
     ctx.fill()
 
-    // Огонь двигателя
+    // Огонь при тяге
     if (gameState.ship.thrust) {
-      ctx.fillStyle = '#FCD34D'
+      const flameGradient = ctx.createLinearGradient(-SHIP_RADIUS, 0, -SHIP_RADIUS * 1.5, 0)
+      flameGradient.addColorStop(0, '#FCD34D')
+      flameGradient.addColorStop(0.5, '#F59E0B')
+      flameGradient.addColorStop(1, '#DC2626')
+      
+      ctx.fillStyle = flameGradient
       ctx.beginPath()
       ctx.moveTo(-SHIP_RADIUS * 0.5, -SHIP_RADIUS * 0.3)
       ctx.lineTo(-SHIP_RADIUS * 1.5, 0)
@@ -261,15 +300,15 @@ export default function GravityGameClient({ level }: { level: number }) {
 
     ctx.restore()
 
+    // Рисуем границы карты
+    ctx.strokeStyle = '#E5E7EB'
+    ctx.lineWidth = 2
+    ctx.setLineDash([5, 5]) // Пунктирная линия
+    ctx.strokeRect(-300, -200, 600, 400)
+    ctx.setLineDash([]) // Сбрасываем пунктир
+
     // Восстанавливаем состояние контекста
     ctx.restore()
-
-    // Рисуем UI
-    ctx.fillStyle = '#1F2937'
-    ctx.font = 'bold 20px sans-serif'
-    ctx.textAlign = 'left'
-    ctx.fillText(`Рівень: ${gameState.level}`, 20, 30)
-    ctx.fillText(`Зібрано: ${gameState.score}/5`, 20, 60)
 
   }, [gameState])
 
@@ -282,64 +321,153 @@ export default function GravityGameClient({ level }: { level: number }) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#EEE9FF] via-[#F5F0FF] to-[#FAF5FF] flex flex-col items-center justify-center p-4">
-      <div className="max-w-4xl w-full">
-        {/* Заголовок */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-6"
-        >
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Орбітальна Арифметика</h1>
-          <p className="text-gray-600">
-            Зберіть 5 правильних астероїдів, які дорівнюють числу на планеті
-          </p>
-        </motion.div>
+    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-100 to-blue-100 flex flex-col items-center justify-center p-4">
+      {/* Красивый заголовок для детей */}
+      <motion.div
+        initial={{ opacity: 0, y: -20, scale: 0.9 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.5, type: "spring" }}
+        className="text-center mb-6"
+      >
+        <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 to-blue-600 bg-clip-text text-transparent mb-2">
+          🚀 Орбітальна Арифметика 🌟
+        </h1>
+        <p className="text-lg md:text-xl text-gray-700 font-medium">
+          {gameState.level === 1 ? 'Зберіть 1 правильний астероїд для планети!' : 
+           gameState.level === 2 ? 'Зберіть 2 правильних астероїди для планети!' : 
+           'Зберіть 2 правильних астероїди для планети!'}
+        </p>
+      </motion.div>
 
-        {/* Игровое поле */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="relative bg-white rounded-2xl shadow-2xl p-4"
-        >
+      {/* Панель с уровнем и счетом над игрой */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.2, duration: 0.3 }}
+        className="mb-4 flex flex-wrap gap-4 justify-center"
+      >
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg px-6 py-3 border-2 border-purple-200">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">🎯</span>
+            <div>
+              <p className="text-xs text-gray-600 font-medium">Рівень</p>
+              <p className="text-xl font-bold text-purple-600">{gameState.level}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg px-6 py-3 border-2 border-pink-200">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">⭐</span>
+            <div>
+              <p className="text-xs text-gray-600 font-medium">Зібрано</p>
+              <p className="text-xl font-bold text-pink-600">{gameState.score}/{gameState.level === 1 ? 1 : gameState.level === 2 ? 2 : 2}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg px-6 py-3 border-2 border-blue-200">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">🪐</span>
+            <div>
+              <p className="text-xs text-gray-600 font-medium">Планета</p>
+              <p className="text-xl font-bold text-blue-600">{gameState.planetNumber}</p>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Игровое поле с красивой рамкой */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9, rotate: -2 }}
+        animate={{ opacity: 1, scale: 1, rotate: 0 }}
+        transition={{ delay: 0.3, duration: 0.4, type: "spring" }}
+        className="relative"
+      >
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-400 to-blue-400 rounded-3xl blur-xl opacity-30 animate-pulse"></div>
+        <div className="relative bg-white rounded-3xl shadow-2xl p-6 border-4 border-white/50">
           <canvas
             ref={canvasRef}
-            width={1200}
-            height={800}
-            className="w-full h-auto max-w-full rounded-lg border-2 border-purple-200"
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
+            width={600}
+            height={400}
+            className="w-full h-auto max-w-full rounded-2xl border-2 border-purple-200"
+            style={{ touchAction: 'none' }}
           />
+        </div>
+      </motion.div>
 
-          {/* Управление для десктопа */}
-          <div className="mt-4 text-center text-sm text-gray-600">
-            <p>Управління: ↑/W або Пробіл - тяга, ←/A →/D - поворот</p>
-          </div>
-
-          {/* Управление для мобильных */}
-          <div className="mt-2 text-center text-sm text-gray-600 md:hidden">
-            <p>Торкніться екрана для управління кораблем</p>
+        {/* Управление для мобильных с джойстиком */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.3 }}
+          className="mt-4 flex flex-col items-center gap-2"
+        >
+          <div className="relative">
+            <Joystick 
+              onMove={handleJoystickMove}
+              size={100}
+              stickSize={32}
+            />
           </div>
         </motion.div>
 
-        {/* Модальное окно завершения игры */}
-        <GameEndModal
-          isOpen={gameState.status === 'won' || gameState.status === 'lost'}
-          isWon={gameState.status === 'won'}
-          onPlayAgain={resetGame}
-          onSelectLevel={handleSelectLevel}
-          onMainMenu={handleMainMenu}
-          title={gameState.status === 'won' ? 'Чудово!' : 'Гра закінчена'}
-          winMessage={`Ви зібрали всі правильні астероїди! Число планети: ${gameState.planetNumber}`}
-          loseMessage={gameState.status === 'lost' ? 'Ви зіткнулися з неправильним астероїдом або планетою!' : 'Спробуйте ще раз!'}
-          playAgainText="Грати знову"
-          mainMenuText="В головне меню"
-          hasLevels={true}
-          levelSelectHref="/math/gravity-slingshot"
-          showCurrentLevel={false}
-        />
-      </div>
+        {/* Кнопки управления */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6, duration: 0.3 }}
+          className="mt-6 flex gap-4 justify-center"
+        >
+          <button
+            onClick={handleSelectLevel}
+            className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-2xl font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center gap-2"
+          >
+            <span>🎯</span>
+            Вибрати рівень
+          </button>
+          <button
+            onClick={handleMainMenu}
+            className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-3 rounded-2xl font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center gap-2"
+          >
+            <span>🏠</span>
+            Головне меню
+          </button>
+        </motion.div>
+
+      {/* Модальное окно конца игры */}
+      <AnimatePresence>
+        {gameState.status === 'won' && (
+          <GameEndModal
+            isOpen={true}
+            isWon={true}
+            onPlayAgain={() => resetGame()}
+            onSelectLevel={handleSelectLevel}
+            onMainMenu={handleMainMenu}
+            title="Рівень пройдено!"
+            winMessage="Чудово!"
+            playAgainText="Грати ще раз"
+            selectLevelText="Вибрати рівень"
+            mainMenuText="В головне меню"
+            showCurrentLevel={false} // Исправлено: не показывать текущий уровень
+          />
+        )}
+        {gameState.status === 'lost' && (
+          <GameEndModal
+            isOpen={true}
+            isWon={false}
+            onPlayAgain={() => resetGame()}
+            onSelectLevel={handleSelectLevel}
+            onMainMenu={handleMainMenu}
+            title="Спробуйте ще раз!"
+            loseMessage="Не вдалося"
+            playAgainText="Спробувати ще раз"
+            selectLevelText="Вибрати рівень"
+            mainMenuText="В головне меню"
+            showCurrentLevel={false} // Исправлено: не показывать текущий уровень
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }
