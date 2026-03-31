@@ -98,22 +98,6 @@ export default function ProfilePage() {
     }
   }, [user?.id])
 
-  // Принудительное обновление данных
-  const refreshStats = async () => {
-    if (!user?.id) return
-    console.log('Принудительное обновление статистики для юзера:', user.id)
-    const { success, data } = await getUserStats(user.id)
-    console.log('Принудительно обновленные данные:', data)
-    if (success && data) {
-      setStats(data)
-      setUserStats({
-        math: getLevelProgress(data.math_xp || 0),
-        ukrainian: getLevelProgress(data.ukrainian_xp || 0), // Используем ukrainian_xp
-        dutch: getLevelProgress(data.dutch_xp || 0)
-      })
-    }
-  }
-
   const greetingName = useMemo(() => profile.name || DEFAULT_PROFILE.name, [profile.name])
   
   // Глобальный уровень (используем total_xp из базы)
@@ -326,16 +310,6 @@ export default function ProfilePage() {
                 </p>
               </div>
             </div>
-          </div>
-          
-          {/* Кнопка обновления данных */}
-          <div className="flex justify-center">
-            <button
-              onClick={refreshStats}
-              className="rounded-2xl bg-gradient-to-r from-green-500 to-emerald-500 px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:opacity-95"
-            >
-              🔄 Оновити дані
-            </button>
           </div>
         </motion.div>
 
