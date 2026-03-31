@@ -439,7 +439,7 @@ export default function WriteWordGamePage({ params }: WriteWordGamePageProps) {
           isWon={true}
           onPlayAgain={() => {
             setShowLevelComplete(false)
-            initializeLevel()
+            initializeWord()
           }}
           onSelectLevel={() => router.push('/ukrainian/write-word/levels')}
           onMainMenu={() => router.push('/ukrainian')}
