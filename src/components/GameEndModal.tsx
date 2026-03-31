@@ -17,6 +17,7 @@ interface GameEndModalProps {
   currentLevel?: string
   levelSelectHref?: string
   mainMenuHref?: string
+  showCurrentLevel?: boolean
 }
 
 export default function GameEndModal({
@@ -35,7 +36,8 @@ export default function GameEndModal({
   hasLevels = true,
   currentLevel = '',
   levelSelectHref = '/math',
-  mainMenuHref = '/'
+  mainMenuHref = '/',
+  showCurrentLevel = true
 }: GameEndModalProps) {
   if (!isOpen) return null
 
@@ -50,8 +52,12 @@ export default function GameEndModal({
 
   // Кнопка уровней - если есть функция onSelectLevel
   if (onSelectLevel) {
+    const levelButtonText = showCurrentLevel && currentLevel 
+      ? `Рівень ${currentLevel}` 
+      : selectLevelText
+    
     buttons.push({
-      text: selectLevelText,
+      text: levelButtonText,
       onClick: onSelectLevel,
       color: 'bg-blue-500 hover:bg-blue-600'
     })
