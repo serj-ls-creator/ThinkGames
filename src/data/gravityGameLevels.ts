@@ -304,14 +304,51 @@ export const GRAVITY_LEVELS_DATA: GravityLevelData[] = [
   }
 ]
 
-// Функция для получения случайного варианта для уровня
+// Глобальное состояние для отслеживания текущего индекса варианта (для детерминированности)
+let currentVariantIndex = 0
+
+// Функция для получения детерминированного варианта для уровня (чтобы избежать ошибок гидратации)
 export function getRandomLevelVariant(level: number): LevelVariant {
   const levelData = GRAVITY_LEVELS_DATA.find(data => data.level === level)
   if (!levelData) {
     throw new Error(`Level ${level} not found`)
   }
   
-  const variants = levelData.variants
-  const randomIndex = Math.floor(Math.random() * variants.length)
-  return variants[randomIndex]
+  // Используем простую последовательность вариантов: 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, потом снова 5
+  const variantSequence = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] // Последовательность вариантов
+  const targetNumber = variantSequence[currentVariantIndex]
+  const selectedVariant = levelData.variants.find(variant => variant.planetNumber === targetNumber)
+  
+  if (!selectedVariant) {
+    // Если не нашли вариант с таким числом, берем первый
+    return levelData.variants[0]
+  }
+  
+  return selectedVariant
+}
+
+// Функция для переключения на следующий вариант
+export function getNextVariant(level: number): LevelVariant {
+  const levelData = GRAVITY_LEVELS_DATA.find(data => data.level === level)
+  if (!levelData) {
+    throw new Error(`Level ${level} not found`)
+  }
+  
+  // Увеличиваем индекс и переходим к следующему варианту
+  currentVariantIndex = (currentVariantIndex + 1) % 15
+  
+  const variantSequence = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+  const targetNumber = variantSequence[currentVariantIndex]
+  const selectedVariant = levelData.variants.find(variant => variant.planetNumber === targetNumber)
+  
+  if (!selectedVariant) {
+    return levelData.variants[0]
+  }
+  
+  return selectedVariant
+}
+
+// Функция для сброса индекса варианта
+export function resetVariantIndex(): void {
+  currentVariantIndex = 0
 }

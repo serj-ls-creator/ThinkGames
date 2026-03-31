@@ -46,127 +46,7 @@ export const BOUNDARY_FORCE = 50  // Уменьшено с 200 до 50
 export const BOUNDARY_DAMPING = 0.8 // Увеличено с 0.7 до 0.8 (меньше затухания)
 export const BOUNDARY_MARGIN = 30 // Зона мягкого отталкивания
 
-export const GRAVITY_LEVELS = [
-  {
-    level: 1,
-    planetNumber: Math.floor(Math.random() * 6) + 5, // Случайное от 5 до 10
-    asteroidCount: 3,
-    correctAsteroids: 1,
-    operations: ['+', '-'],
-    maxNumber: 15
-  },
-  {
-    level: 2,
-    planetNumber: Math.floor(Math.random() * 10) + 6, // Случайное от 6 до 15
-    asteroidCount: 4,
-    correctAsteroids: 2,
-    operations: ['+', '-', '*'],
-    maxNumber: 30
-  },
-  {
-    level: 3,
-    planetNumber: Math.floor(Math.random() * 11) + 10, // Случайное от 10 до 20
-    asteroidCount: 5,
-    correctAsteroids: 2,
-    operations: ['+', '-', '*', '/'],
-    maxNumber: 50
-  }
-]
-
-function generateMathExpression(target: number, operations: string[], maxNumber: number): { expression: string, result: number } {
-  const operation = operations[Math.floor(Math.random() * operations.length)]
-  let expression = ''
-  let result = 0
-
-  switch (operation) {
-    case '+':
-      const a1 = Math.floor(Math.random() * maxNumber) + 1
-      const b1 = target - a1
-      if (b1 > 0 && b1 <= maxNumber) {
-        expression = `${a1}+${b1}`
-        result = target
-      } else {
-        expression = `${a1}+${Math.floor(Math.random() * maxNumber) + 1}`
-        result = a1 + parseInt(expression.split('+')[1])
-      }
-      break
-    case '-':
-      const a2 = Math.floor(Math.random() * maxNumber) + target
-      const b2 = a2 - target
-      expression = `${a2}-${b2}`
-      result = target
-      break
-    case '*':
-      if (target > 1) {
-        const factors = []
-        for (let i = 2; i <= Math.sqrt(target); i++) {
-          if (target % i === 0) {
-            factors.push(i)
-          }
-        }
-        if (factors.length > 0) {
-          const factor = factors[Math.floor(Math.random() * factors.length)]
-          expression = `${factor}*${target / factor}`
-          result = target
-        } else {
-          expression = `${target}*1`
-          result = target
-        }
-      } else {
-        expression = `${target}*1`
-        result = target
-      }
-      break
-    case '/':
-      const multiplier = Math.floor(Math.random() * 5) + 2
-      const dividend = target * multiplier
-      expression = `${dividend}/${multiplier}`
-      result = target
-      break
-  }
-
-  return { expression, result }
-}
-
-function generateWrongExpression(target: number, operations: string[], maxNumber: number): { expression: string, result: number } {
-  const operation = operations[Math.floor(Math.random() * operations.length)]
-  let expression = ''
-  let result = 0
-
-  switch (operation) {
-    case '+':
-      const a1 = Math.floor(Math.random() * maxNumber) + 1
-      const b1 = Math.floor(Math.random() * maxNumber) + 1
-      expression = `${a1}+${b1}`
-      result = a1 + b1
-      break
-    case '-':
-      const a2 = Math.floor(Math.random() * maxNumber) + 1
-      const b2 = Math.floor(Math.random() * maxNumber) + 1
-      expression = `${a2}-${b2}`
-      result = a2 - b2
-      break
-    case '*':
-      const a3 = Math.floor(Math.random() * 15) + 1
-      const b3 = Math.floor(Math.random() * 15) + 1
-      expression = `${a3}*${b3}`
-      result = a3 * b3
-      break
-    case '/':
-      const divisor = Math.floor(Math.random() * 10) + 1
-      const dividend = divisor * (Math.floor(Math.random() * 10) + 1)
-      expression = `${dividend}/${divisor}`
-      result = dividend / divisor
-      break
-  }
-
-  // Убедимся, что результат не совпадает с целевым числом
-  if (result === target) {
-    return generateWrongExpression(target, operations, maxNumber)
-  }
-
-  return { expression, result }
-}
+import { getRandomLevelVariant, LevelVariant, GravityLevelData, GRAVITY_LEVELS_DATA } from '../data/gravityGameLevels'
 
 export function applyBoundaryForces(obj: { x: number, y: number, vx: number, vy: number, radius: number }, deltaTime: number) {
   const halfWidth = MAP_WIDTH / 2  // 300
@@ -225,37 +105,61 @@ export function applyBoundaryForces(obj: { x: number, y: number, vx: number, vy:
   return { x: newX, y: newY, vx: newVx, vy: newVy }
 }
 
-import { getRandomLevelVariant, LevelVariant, GravityLevelData, GRAVITY_LEVELS_DATA } from '../data/gravityGameLevels'
-
 export function generateLevel(level: number): GameState {
   // Получаем детерминированный вариант из файла (чтобы избежать ошибок гидратации)
-  const levelVariant = getLevelVariant(level)
+  const levelVariant = getRandomLevelVariant(level)
   
-  // Инициализация корабля в случайной позиции на краю экрана
-  const angle = Math.random() * Math.PI * 2
-  const distance = 200 // Уменьшаем с 250 до 200
+  // Ракета всегда в левом нижнем углу
   const ship: Ship = {
-    x: Math.cos(angle) * distance,
-    y: Math.sin(angle) * distance,
+    x: -250, // Левый край (учитывая MAP_WIDTH = 600, от -300 до +300)
+    y: 150,  // Нижний край (учитывая MAP_HEIGHT = 400, от -200 до +200)
     vx: 0,
     vy: 0,
     angle: 0,
     thrust: false
   }
 
-  // Цвета для астероидов (больше разнообразия)
-  const asteroidColors = [
-    '#10B981', '#059669', '#047857', '#065F46', '#064E3B', // зеленые
-    '#EF4444', '#DC2626', '#B91C1C', '#991B1B', '#7F1D1D', // красные
-    '#3B82F6', '#2563EB', '#1D4ED8', '#1E40AF', '#1E3A8A', // синие
-    '#F59E0B', '#D97706', '#B45309', '#92400E', '#78350F', // оранжевые
-    '#8B5CF6', '#7C3AED', '#6D28D9', '#5B21B6', '#4C1D95', // фиолетовые
-    '#EC4899', '#DB2777', '#BE185D', '#9F1239', '#831843', // розовые
-    '#14B8A6', '#0D9488', '#0F766E', '#115E59', '#134E4A', // бирюзовые
-    '#F97316', '#EA580C', '#C2410C', '#9A3412', '#7C2D12', // темно-оранжевые
-    '#6366F1', '#4F46E5', '#4338CA', '#3730A3', '#312E81', // индиго
-    '#84CC16', '#65A30D', '#4D7C0F', '#365314', '#1A2E05'  // лайм
-  ]
+  // Детерминированная случайная позиция на карте
+const getDeterministicPosition = (index: number, level: number) => {
+  // Используем индекс и уровень для создания "случайной" но детерминированной позиции
+  const seed = level * 1000 + index * 100
+  const angle = ((seed * 7) % 360) * Math.PI / 180 // Детерминированный угол
+  const distance = 100 + ((seed * 13) % 150) // Детерминированное расстояние от центра
+  
+  return {
+    x: Math.cos(angle) * distance,
+    y: Math.sin(angle) * distance
+  }
+}
+
+// Детерминированная случайная скорость
+const getDeterministicVelocity = (index: number, level: number) => {
+  const seed = level * 1000 + index * 100
+  const speed = 0.3 + ((seed * 17) % 50) / 100 // Скорость от 0.3 до 0.8
+  const angle = ((seed * 23) % 360) * Math.PI / 180
+  
+  return {
+    vx: Math.cos(angle) * speed,
+    vy: Math.sin(angle) * speed
+  }
+}
+
+// Детерминированные цвета для астероидов (чтобы избежать Math.random())
+const getDeterministicColor = (index: number) => {
+    const colors = [
+      '#10B981', '#059669', '#047857', '#065F46', '#064E3B', // зеленые
+      '#EF4444', '#DC2626', '#B91C1C', '#991B1B', '#7F1D1D', // красные
+      '#3B82F6', '#2563EB', '#1D4ED8', '#1E40AF', '#1E3A8A', // синие
+      '#F59E0B', '#D97706', '#B45309', '#92400E', '#78350F', // оранжевые
+      '#8B5CF6', '#7C3AED', '#6D28D9', '#5B21B6', '#4C1D95', // фиолетовые
+      '#EC4899', '#DB2777', '#BE185D', '#9F1239', '#831843', // розовые
+      '#14B8A6', '#0D9488', '#0F766E', '#115E59', '#134E4A', // бирюзовые
+      '#F97316', '#EA580C', '#C2410C', '#9A3412', '#7C2D12', // темно-оранжевые
+      '#6366F1', '#4F46E5', '#4338CA', '#3730A3', '#312E81', // индиго
+      '#84CC16', '#65A30D', '#4D7C0F', '#365314', '#1A2E05'  // лайм
+    ]
+    return colors[index % colors.length]
+  }
 
   // Создаем правильные астероиды
   const correctAsteroids: Asteroid[] = []
@@ -263,24 +167,20 @@ export function generateLevel(level: number): GameState {
   
   for (let i = 0; i < correctCount; i++) {
     const correctAnswer = levelVariant.correctAnswers[i % levelVariant.correctAnswers.length]
-    const asteroidAngle = (Math.PI * 2 / correctCount) * i + Math.PI / 4
-    const orbitalSpeed = 0.5 + Math.random() * 0.3
-    const asteroidDistance = 150 + Math.random() * 50
-    
-    const x = Math.cos(asteroidAngle) * asteroidDistance
-    const y = Math.sin(asteroidAngle) * asteroidDistance
+    const position = getDeterministicPosition(i, level)
+    const velocity = getDeterministicVelocity(i, level)
     
     correctAsteroids.push({
       id: `correct-${i}`,
-      x,
-      y,
-      vx: -Math.sin(asteroidAngle) * orbitalSpeed,
-      vy: Math.cos(asteroidAngle) * orbitalSpeed,
+      x: position.x,
+      y: position.y,
+      vx: velocity.vx,
+      vy: velocity.vy,
       expression: correctAnswer.expression,
       result: correctAnswer.result,
       isCorrect: true,
       radius: ASTEROID_RADIUS,
-      color: asteroidColors[Math.floor(Math.random() * asteroidColors.length)]
+      color: getDeterministicColor(i + level * 10) // Детерминированный цвет
     })
   }
 
@@ -290,33 +190,30 @@ export function generateLevel(level: number): GameState {
   
   for (let i = 0; i < wrongCount; i++) {
     const wrongAnswer = levelVariant.wrongAnswers[i % levelVariant.wrongAnswers.length]
-    const wrongAngle = (Math.PI * 2 / wrongCount) * i + Math.PI
-    const wrongSpeed = 0.4 + Math.random() * 0.4
-    const wrongDistance = 180 + Math.random() * 40
-    
-    const x = Math.cos(wrongAngle) * wrongDistance
-    const y = Math.sin(wrongAngle) * wrongDistance
+    const position = getDeterministicPosition(i + 10, level) // +10 чтобы не пересекаться с правильными
+    const velocity = getDeterministicVelocity(i + 10, level)
     
     wrongAsteroids.push({
       id: `wrong-${i}`,
-      x,
-      y,
-      vx: -Math.sin(wrongAngle) * wrongSpeed,
-      vy: Math.cos(wrongAngle) * wrongSpeed,
+      x: position.x,
+      y: position.y,
+      vx: velocity.vx,
+      vy: velocity.vy,
       expression: wrongAnswer.expression,
       result: wrongAnswer.result,
       isCorrect: false,
       radius: ASTEROID_RADIUS,
-      color: asteroidColors[Math.floor(Math.random() * asteroidColors.length)]
+      color: getDeterministicColor(i + level * 20) // Детерминированный цвет
     })
   }
 
-  // Объединяем все астероиды и перемешиваем
+  // Объединяем все астероиды и перемешиваем (детерминированно)
   const allAsteroids = [...correctAsteroids, ...wrongAsteroids]
   
-  // Перемешиваем массив
+  // Детерминированное перемешивание (чтобы избежать Math.random())
+  const shuffleSeed = level
   for (let i = allAsteroids.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = (shuffleSeed + i) % (i + 1);
     [allAsteroids[i], allAsteroids[j]] = [allAsteroids[j], allAsteroids[i]]
   }
 
@@ -330,24 +227,6 @@ export function generateLevel(level: number): GameState {
     level: level,
     wallHit: false
   }
-}
-
-// Функция для получения детерминированного варианта для уровня (чтобы избежать ошибок гидратации)
-export function getLevelVariant(level: number, seed?: number): LevelVariant {
-  const levelData = GRAVITY_LEVELS_DATA.find((data: any) => data.level === level)
-  if (!levelData) {
-    throw new Error(`Level ${level} not found`)
-  }
-  
-  // Используем детерминированный выбор на основе уровня и времени
-  // чтобы сервер и клиент показывали одинаковый результат
-  const date = new Date()
-  const dayOfMonth = date.getDate()
-  const hour = date.getHours()
-  const combinedSeed = level * 100 + dayOfMonth * 10 + (hour % 10)
-  
-  const variantIndex = combinedSeed % levelData.variants.length
-  return levelData.variants[variantIndex]
 }
 
 export function updatePhysics(gameState: GameState, deltaTime: number): GameState {

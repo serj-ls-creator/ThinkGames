@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Header } from '../../../components/Header'
-import { GRAVITY_LEVELS } from '../../../src/lib/gravityGame'
+import { GRAVITY_LEVELS_DATA } from '../../../src/data/gravityGameLevels'
 
 export default function GravitySlingshotPage() {
   return (
@@ -19,9 +19,8 @@ export default function GravitySlingshotPage() {
           <h1 className="text-3xl font-bold text-gray-800 mb-4">
             Орбітальна Арифметика
           </h1>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            Керуйте космічним кораблем у гравітаційному полі. Зберіть астероїди з математичними виразами, 
-            результат яких дорівнює числу на планеті. Уникайте неправильних астероїдів та зіткнення з планетою!
+          <p className="text-lg text-gray-600 mb-8">
+            Оберіть рівень та запустіть гру!
           </p>
         </motion.div>
 
@@ -31,7 +30,7 @@ export default function GravitySlingshotPage() {
           transition={{ delay: 0.2 }}
           className="grid grid-cols-1 md:grid-cols-3 gap-6"
         >
-          {GRAVITY_LEVELS.map((level, index) => (
+          {GRAVITY_LEVELS_DATA.map((level, index) => (
             <Link
               key={level.level}
               href={`/math/gravity-slingshot/${level.level}`}
@@ -47,10 +46,10 @@ export default function GravitySlingshotPage() {
                     Рівень {level.level}
                   </h3>
                   <div className="text-sm text-gray-600 space-y-1">
-                    <p>Ціль: {level.planetNumber}</p>
-                    <p>Астероїдів: {level.asteroidCount}</p>
-                    <p>Правильних: {level.correctAsteroids}</p>
-                    <p>Операції: {level.operations.join(', ')}</p>
+                    <p>Число планети: {level.variants[0]?.planetNumber || '?'}</p>
+                    <p>Астероїдів: {level.variants[0]?.correctAnswers.length + level.variants[0]?.wrongAnswers.length || '?'}</p>
+                    <p>Правильних: {level.variants[0]?.correctAnswers.length || '?'}</p>
+                    <p>Операції: {['+', '-', '*', '/'].slice(0, level.level + 1).join(', ')}</p>
                   </div>
                 </div>
               </motion.div>

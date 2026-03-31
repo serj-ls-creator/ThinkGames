@@ -1,12 +1,12 @@
 import { notFound } from 'next/navigation'
-import { GRAVITY_LEVELS } from '../../../../src/lib/gravityGame'
+import { GRAVITY_LEVELS_DATA } from '../../../../src/data/gravityGameLevels'
 import GravityGameClient from './GravityGameClient'
 
 export default function GravitySlingshotPage({ params }: { params: { level: string } }) {
   const level = parseInt(params.level)
   
   // Проверяем, существует ли уровень
-  if (isNaN(level) || level < 1 || level > GRAVITY_LEVELS.length) {
+  if (isNaN(level) || level < 1 || level > GRAVITY_LEVELS_DATA.length) {
     notFound()
   }
 
@@ -14,7 +14,7 @@ export default function GravitySlingshotPage({ params }: { params: { level: stri
 }
 
 export async function generateStaticParams() {
-  return GRAVITY_LEVELS.map((level) => ({
+  return GRAVITY_LEVELS_DATA.map((level) => ({
     level: level.level.toString(),
   }))
 }

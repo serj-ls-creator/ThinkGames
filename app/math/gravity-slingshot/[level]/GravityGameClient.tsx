@@ -6,6 +6,7 @@ import { useAuth } from '../../../../src/context/AuthContext'
 import { saveGameResult } from '../../../../src/lib/points'
 import GameEndModal from '../../../../src/components/GameEndModal'
 import Joystick from '../../../../src/components/ui/Joystick'
+import { resetVariantIndex, getNextVariant } from '../../../../src/data/gravityGameLevels'
 import { 
   generateLevel, 
   updatePhysics, 
@@ -312,12 +313,19 @@ export default function GravityGameClient({ level }: { level: number }) {
 
   }, [gameState])
 
+  // Обработчики
   const handleSelectLevel = () => {
     window.location.href = '/math/gravity-slingshot'
   }
 
   const handleMainMenu = () => {
     window.location.href = '/math'
+  }
+
+  const handlePlayAgain = () => {
+    // Получаем следующий вариант и сбрасываем игру
+    getNextVariant(level)
+    resetGame()
   }
 
   return (
@@ -441,30 +449,28 @@ export default function GravityGameClient({ level }: { level: number }) {
           <GameEndModal
             isOpen={true}
             isWon={true}
-            onPlayAgain={() => resetGame()}
+            onPlayAgain={handlePlayAgain}
             onSelectLevel={handleSelectLevel}
             onMainMenu={handleMainMenu}
             title="Рівень пройдено!"
             winMessage="Чудово!"
-            playAgainText="Грати ще раз"
+            playAgainText="Спробувати ще"
             selectLevelText="Вибрати рівень"
-            mainMenuText="В головне меню"
-            showCurrentLevel={false} // Исправлено: не показывать текущий уровень
+            mainMenuText="На головну"
           />
         )}
         {gameState.status === 'lost' && (
           <GameEndModal
             isOpen={true}
             isWon={false}
-            onPlayAgain={() => resetGame()}
+            onPlayAgain={handlePlayAgain}
             onSelectLevel={handleSelectLevel}
             onMainMenu={handleMainMenu}
             title="Спробуйте ще раз!"
             loseMessage="Не вдалося"
-            playAgainText="Спробувати ще раз"
+            playAgainText="Спробувати ще"
             selectLevelText="Вибрати рівень"
-            mainMenuText="В головне меню"
-            showCurrentLevel={false} // Исправлено: не показывать текущий уровень
+            mainMenuText="На головну"
           />
         )}
       </AnimatePresence>
