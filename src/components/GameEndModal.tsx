@@ -30,9 +30,9 @@ export default function GameEndModal({
   title = 'Результат гри',
   winMessage = 'Вітаю!',
   loseMessage = 'Спробуйте ще раз!',
-  playAgainText = 'Ще раз',
+  playAgainText = 'Спробувати ще',
   selectLevelText = 'Вибрати рівень',
-  mainMenuText = 'В головне меню',
+  mainMenuText = 'На головну',
   hasLevels = true,
   currentLevel = '',
   levelSelectHref = '/math',
@@ -43,14 +43,14 @@ export default function GameEndModal({
 
   const buttons = []
   
-  // Кнопка "Сыграть еще" - всегда есть
+  // Кнопка "Спробувати ще" - всегда есть
   buttons.push({
     text: playAgainText,
     onClick: onPlayAgain,
     color: 'bg-green-500 hover:bg-green-600'
   })
 
-  // Кнопка уровней - всегда есть если есть функция onSelectLevel
+  // Кнопка уровней - если есть функция onSelectLevel
   if (onSelectLevel) {
     const levelButtonText = showCurrentLevel && currentLevel 
       ? `Рівень ${currentLevel}` 
@@ -63,7 +63,7 @@ export default function GameEndModal({
     })
   }
 
-  // Кнопка "В главное меню" - всегда есть
+  // Кнопка "На головну" - всегда есть
   buttons.push({
     text: mainMenuText,
     onClick: onMainMenu,

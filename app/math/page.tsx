@@ -18,6 +18,13 @@ const mathGames = [
     color: 'purple' as const,
   },
   {
+    id: 'gravity-slingshot',
+    title: 'Орбітальна Арифметика',
+    icon: '🚀',
+    href: '/math/gravity-slingshot',
+    color: 'purple' as const,
+  },
+  {
     id: 'balloon-sweeper',
     title: 'Кульковий сапер',
     icon: '🎈',
