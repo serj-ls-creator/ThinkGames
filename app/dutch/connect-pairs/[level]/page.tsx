@@ -1,6 +1,6 @@
 'use client'
 
-import { ConnectPairsGame } from '../../../../components/ConnectPairsGame'
+import { DutchConnectPairsGame } from '../../../../components/DutchConnectPairsGame'
 import { dutchLevels } from '../../../../data/dutch-words'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
@@ -36,7 +36,7 @@ export default function DutchConnectPairsPage({ params }: DutchConnectPairsPageP
         </Link>
       </div>
 
-      <ConnectPairsGame 
+      <DutchConnectPairsGame 
         items={levelData.pairs} 
         title={`Нідерландська - Рівень ${levelNum}`}
         category="dutch"

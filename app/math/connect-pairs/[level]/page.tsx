@@ -1,6 +1,6 @@
 'use client'
 
-import { ConnectPairsGame } from '../../../../components/ConnectPairsGame'
+import { MathConnectPairsGame } from '../../../../components/MathConnectPairsGame'
 import { mathLevels } from '../../../../data/math-pairs'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
@@ -36,7 +36,7 @@ export default function MathConnectPairsPage({ params }: MathConnectPairsPagePro
         </Link>
       </div>
 
-      <ConnectPairsGame 
+      <MathConnectPairsGame 
         items={levelData.pairs} 
         title={`Математика - Таблиця на ${levelNum === 10 ? '11-12' : levelNum}`}
         category="math"

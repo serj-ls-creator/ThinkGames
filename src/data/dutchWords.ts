@@ -57,12 +57,13 @@ export const dutchWordsByLevel = {
     { word: 'praten', hint: 'Спілкуватися голосом' },
     { word: 'kijken', hint: 'Бачити очима' },
     { word: 'slapen', hint: 'Відпочивати з закритими очима' },
-    { word: 'drinken', hint: 'Вживати рідину' }
+    
   ],
   7: [
     { word: 'weekend', hint: 'Субота і неділя' },
     { word: 'vandaag', hint: 'Цей самий день' },
-    { word: 'familie', hint: 'Батьки і діти разом' }
+    { word: 'familie', hint: 'Батьки і діти разом' },
+    { word: 'drinken', hint: 'Вживати рідину' }
   ]
 };
 

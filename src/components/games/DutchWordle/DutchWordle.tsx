@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { getRandomWord, DutchWord } from '@/src/data/dutchWords'
 import { useAuth } from '@/src/context/AuthContext'
 import { saveGameResult } from '@/src/lib/points'
+import GameEndModal from '@/src/components/GameEndModal'
 
 interface DutchWordleProps {
   level: number
@@ -352,44 +353,23 @@ export default function DutchWordle({ level }: DutchWordleProps) {
         </div>
 
         {/* Модальное окно победы/поражения */}
-        {showSuccessModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full text-center">
-              <div className="text-6xl mb-4">
-                {gameWon ? '🎉' : '😔'}
-              </div>
-              <h2 className="text-2xl font-bold mb-2">
-                {gameWon ? 'Вітаю!' : 'Спробуйте ще раз!'}
-              </h2>
-              <p className="text-gray-600 mb-6">
-                {gameWon 
-                  ? 'Ви вгадали слово!' 
-                  : `Правильне слово: ${currentWord.toUpperCase()}`
-                }
-              </p>
-              <div className="flex flex-col gap-3">
-                <button
-                  onClick={handlePlayAgain}
-                  className="w-full py-3 px-4 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-all"
-                >
-                  Ще раз
-                </button>
-                <button
-                  onClick={handleSelectLevel}
-                  className="w-full py-3 px-4 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-all"
-                >
-                  Вибрати рівень
-                </button>
-                <button
-                  onClick={handleMainMenu}
-                  className="w-full py-3 px-4 bg-gray-500 text-white rounded-lg font-medium hover:bg-gray-600 transition-all"
-                >
-                  В головне меню
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <GameEndModal
+          isOpen={showSuccessModal}
+          isWon={gameWon}
+          correctAnswer={currentWord.toUpperCase()}
+          onPlayAgain={handlePlayAgain}
+          onSelectLevel={handleSelectLevel}
+          onMainMenu={handleMainMenu}
+          title={gameWon ? 'Чудово!' : 'Гра закінчена'}
+          winMessage="Вітаю!"
+          loseMessage="Спробуйте ще раз!"
+          playAgainText="Ще раз"
+          selectLevelText="Вибрати рівень"
+          mainMenuText="В головне меню"
+          hasLevels={true}
+          levelSelectHref="/dutch/wordle/levels"
+          showCurrentLevel={false}
+        />
       </div>
     </div>
   )

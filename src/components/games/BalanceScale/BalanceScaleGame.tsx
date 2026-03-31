@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState, useRef } from 'react'
 import { BALANCE_LEVELS, BalanceWeight, generateBalanceRound } from '../../../lib/balanceScale'
 import { saveGameResult } from '../../../lib/points'
 import { useAuth } from '../../../context/AuthContext'
+import GameEndModal from '../../../components/GameEndModal'
 
 interface BalanceScaleGameProps {
   maxValue: number
@@ -185,23 +186,20 @@ export const BalanceScaleGame: React.FC<BalanceScaleGameProps> = ({ maxValue }) 
             </svg>
           </div>
 
-          {showWinMessage && (
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="absolute left-1/2 top-3 z-20 w-[min(92%,340px)] -translate-x-1/2 rounded-[1.4rem] border-2 border-emerald-400 bg-white p-4 text-center shadow-xl"
-            >
-              <h2 className="text-2xl font-black text-emerald-700">Вітаємо!</h2>
-              <p className="mt-1 text-sm font-medium text-slate-800 sm:text-base">Ти правильно зрівняв ваги.</p>
-              <button
-                type="button"
-                onClick={handleNextRound}
-                className="mt-3 rounded-full bg-emerald-500 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-600"
-              >
-                Далі
-              </button>
-            </motion.div>
-          )}
+          <GameEndModal
+            isOpen={showWinMessage}
+            isWon={true}
+            onPlayAgain={handleNextRound}
+            onSelectLevel={() => window.location.href = '/math/balance-scale'}
+            onMainMenu={() => window.location.href = '/math'}
+            title="Чудово!"
+            winMessage="Вітаємо!"
+            playAgainText="Далі"
+            mainMenuText="В головне меню"
+            hasLevels={true}
+            levelSelectHref="/math/balance-scale"
+            showCurrentLevel={false}
+          />
         </motion.div>
 
         <motion.div

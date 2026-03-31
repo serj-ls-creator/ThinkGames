@@ -8,11 +8,14 @@ import {
   BalloonDifficulty,
   createBalloonBoard,
   hasWonBalloonSweeper,
+  getBoardMaxWidth,
+  getCellTextSize,
   openArea,
   revealAllMines,
 } from '../../../lib/balloonSweeper'
-import { saveGameResult } from '../../../lib/points'
 import { useAuth } from '../../../context/AuthContext'
+import { saveGameResult } from '../../../lib/points'
+import GameEndModal from '../../../components/GameEndModal'
 
 type PlayMode = 'open' | 'flag'
 type GameStatus = 'idle' | 'playing' | 'won' | 'lost'
@@ -52,18 +55,6 @@ const numberColors: Record<number, string> = {
   8: 'text-fuchsia-600',
 }
 
-const getBoardMaxWidth = (difficulty: BalloonDifficulty) => {
-  if (difficulty.cols <= 5) return 320
-  if (difficulty.cols <= 7) return 380
-  return 430
-}
-
-const getCellTextSize = (difficulty: BalloonDifficulty) => {
-  if (difficulty.cols >= 9) return 'text-sm sm:text-base'
-  if (difficulty.cols >= 7) return 'text-base sm:text-lg'
-  return 'text-lg sm:text-xl'
-}
-
 export const BalloonSweeperGame: React.FC<BalloonSweeperGameProps> = ({ difficulty }) => {
   const { user } = useAuth()
   const [board, setBoard] = useState<BalloonCell[]>(() => createEmptyBoard(difficulty))
@@ -78,8 +69,6 @@ export const BalloonSweeperGame: React.FC<BalloonSweeperGameProps> = ({ difficul
     () => board.filter((cell) => !cell.hasMine && !cell.isOpen).length,
     [board]
   )
-  const boardMaxWidth = getBoardMaxWidth(difficulty)
-  const cellTextSize = getCellTextSize(difficulty)
 
   // Сохранение очков при победе
   useEffect(() => {
@@ -133,16 +122,7 @@ export const BalloonSweeperGame: React.FC<BalloonSweeperGameProps> = ({ difficul
     if (!targetCell || targetCell.isFlagged) return
 
     if (targetCell.hasMine) {
-      const nextBoard = revealAllMines(
-        workingBoard.map((item) =>
-          item.id === cell.id
-            ? {
-                ...item,
-                isOpen: true,
-              }
-            : item
-        )
-      )
+      const nextBoard = revealAllMines(workingBoard)
       setBoard(nextBoard)
       setMoves((value) => value + 1)
       setStatus('lost')
@@ -157,28 +137,40 @@ export const BalloonSweeperGame: React.FC<BalloonSweeperGameProps> = ({ difficul
     setStatus(nextStatus)
   }
 
-  const statusCard = {
-    idle: {
-      title: 'Натисни на клітинку, щоб почати',
-      text: 'Перший хід завжди безпечний. Цифри поруч підказують, де заховалися небезпечні кульки.',
-      color: 'from-sky-400 to-cyan-400',
-    },
-    playing: {
-      title: 'Шукаємо приховані кульки',
-      text: 'Перемикай режим угорі: відкривати клітинки або ставити прапорець.',
-      color: 'from-emerald-400 to-teal-400',
-    },
-    won: {
-      title: 'Ура, поле очищено!',
-      text: 'Усі безпечні клітинки відкрито. Можна зіграти ще раз або обрати інший рівень.',
-      color: 'from-yellow-400 to-orange-400',
-    },
-    lost: {
-      title: 'Кулька луснула',
-      text: 'Нічого страшного. Спробуй ще раз, тепер поле вже виглядає знайомішим.',
-      color: 'from-rose-400 to-pink-400',
-    },
-  }[status]
+  const statusCard = useMemo(() => {
+    switch (status) {
+      case 'idle':
+        return {
+          title: 'Натисни на клітинку, щоб почати',
+          text: 'Перший хід завжди безпечний. Цифри поруч підказують, де заховалися небезпечні кульки.',
+          color: 'from-sky-400 to-cyan-400',
+        }
+      case 'playing':
+        return {
+          title: 'Шукаємо приховані кульки',
+          text: 'Перемикай режим угорі: відкривати клітинки або ставити прапорець.',
+          color: 'from-emerald-400 to-teal-400',
+        }
+      case 'won':
+        return {
+          title: 'Ура, поле очищено!',
+          text: 'Усі безпечні клітинки відкрито. Можна зіграти ще раз або обрати інший рівень.',
+          color: 'from-yellow-400 to-orange-400',
+        }
+      case 'lost':
+        return {
+          title: 'Кулька луснула',
+          text: 'Нічого страшного. Спробуй ще раз, тепер поле вже виглядає знайомішим.',
+          color: 'from-rose-400 to-pink-400',
+        }
+      default:
+        return {
+          title: '',
+          text: '',
+          color: 'from-gray-400 to-gray-500',
+        }
+    }
+  }, [status])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#EEF8FF] via-[#F8FDFF] to-[#FFF6EC] px-4 py-6">
@@ -305,7 +297,7 @@ export const BalloonSweeperGame: React.FC<BalloonSweeperGameProps> = ({ difficul
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.35, delay: 0.15 }}
           className="mx-auto rounded-[2rem] bg-white/90 p-2.5 shadow-2xl sm:p-3"
-          style={{ width: 'min(100%, calc(100vw - 2rem))', maxWidth: `${boardMaxWidth}px` }}
+          style={{ width: 'min(100%, calc(100vw - 2rem))', maxWidth: `${getBoardMaxWidth(difficulty)}px` }}
         >
           <div
             className="grid gap-1.5 sm:gap-2"
@@ -321,7 +313,7 @@ export const BalloonSweeperGame: React.FC<BalloonSweeperGameProps> = ({ difficul
                   whileTap={{ scale: 0.94 }}
                   type="button"
                   onClick={() => handleCellPress(cell)}
-                  className={`aspect-square rounded-xl border font-bold transition-all sm:rounded-2xl ${cellTextSize} ${
+                  className={`aspect-square rounded-xl border font-bold transition-all sm:rounded-2xl ${getBoardMaxWidth(difficulty) >= 9 ? 'text-sm sm:text-base' : getBoardMaxWidth(difficulty) >= 7 ? 'text-base sm:text-lg' : 'text-lg sm:text-xl'} ${
                     isOpen
                       ? isMine
                         ? 'border-rose-200 bg-rose-100'
@@ -348,6 +340,24 @@ export const BalloonSweeperGame: React.FC<BalloonSweeperGameProps> = ({ difficul
           </div>
         </motion.div>
       </div>
+
+      {/* Модальное окно победы/поражения */}
+      <GameEndModal
+        isOpen={status === 'won' || status === 'lost'}
+        isWon={status === 'won'}
+        onPlayAgain={resetGame}
+        onSelectLevel={() => window.location.href = '/math/balloon-sweeper'}
+        onMainMenu={() => window.location.href = '/math'}
+        title={status === 'won' ? 'Чудово!' : 'Гра закінчена'}
+        winMessage="Ура, поле очищено!"
+        loseMessage="Кулька луснула!"
+        playAgainText="Почати знову"
+        selectLevelText="Назад к рівням"
+        mainMenuText="В головне меню"
+        hasLevels={true}
+        levelSelectHref="/math/balloon-sweeper"
+        showCurrentLevel={false}
+      />
     </div>
   )
 }

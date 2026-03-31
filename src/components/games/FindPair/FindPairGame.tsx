@@ -8,6 +8,7 @@ import { GameGrid } from './GameGrid'
 import { useGameStore } from '../../../store/useGameStore'
 import { saveGameResult } from '../../../lib/points'
 import { calculateScore } from '../../../lib/generatePairs'
+import GameEndModal from '../../../components/GameEndModal'
 import { getSessionId } from '../../../lib/utils'
 import { useAuth } from '../../../context/AuthContext'
 
@@ -104,36 +105,20 @@ export const FindPairGame: React.FC = () => {
         </motion.div>
 
         {gameCompleted && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-center space-y-4"
-          >
-            <h2 className="text-3xl font-bold text-green-600 mb-4">
-              🎉 Вітаю! Гру завершено!
-            </h2>
-            
-            <div className="text-lg text-gray-600 mb-6">
-              Результат: <span className="font-bold text-green-600">{calculateScore(moves, level, gridSize)}</span> очок
-            </div>
-
-            <div className="flex gap-4 justify-center">
-              <button
-                onClick={handleResetGame}
-                className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
-              >
-                Грати знову
-              </button>
-              
-              <Link
-                href="/math/find-pair"
-                className="inline-block px-6 py-3 bg-gray-500 text-white font-bold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:bg-gray-600"
-              >
-                Новий рівень
-              </Link>
-            </div>
-          </motion.div>
+          <GameEndModal
+            isOpen={gameCompleted}
+            isWon={true}
+            onPlayAgain={handleResetGame}
+            onSelectLevel={() => window.location.href = '/math/find-pair'}
+            onMainMenu={() => window.location.href = '/math'}
+            title="Чудово!"
+            winMessage="Гру завершено!"
+            playAgainText="Грати знову"
+            mainMenuText="В головне меню"
+            hasLevels={true} // У этой игры есть уровни
+            levelSelectHref="/math/find-pair"
+            showCurrentLevel={false}
+          />
         )}
 
         {!gameCompleted && (

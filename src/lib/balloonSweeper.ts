@@ -157,3 +157,15 @@ export const revealAllMines = (board: BalloonCell[]) =>
 
 export const hasWonBalloonSweeper = (board: BalloonCell[]) =>
   board.every((cell) => (cell.hasMine ? true : cell.isOpen))
+
+export const getBoardMaxWidth = (difficulty: BalloonDifficulty) => {
+  if (difficulty.cols <= 5) return 320
+  if (difficulty.cols <= 7) return 380
+  return 430
+}
+
+export const getCellTextSize = (difficulty: BalloonDifficulty) => {
+  if (difficulty.cols >= 9) return 'text-sm sm:text-base'
+  if (difficulty.cols >= 7) return 'text-base sm:text-lg'
+  return 'text-lg sm:text-xl'
+}

@@ -2,36 +2,29 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { WordPair } from '../../../types'
-import GameEndModal from '../../../components/GameEndModal'
+import { WordPair } from '../src/types'
+import GameEndModal from '../src/components/GameEndModal'
+import { useRouter } from 'next/navigation'
+import { motion } from 'framer-motion'
 
-interface ConnectPairGameProps {
+interface MathConnectPairsGameProps {
   items: WordPair[]
   title: string
+  category: string
 }
 
-interface CardState {
-  id: string
-  content: string
-  side: 'left' | 'right'
-  pairId: string
-  isSelected: boolean
-  isMatched: boolean
-  isError: boolean
-}
+export { MathConnectPairsGame }
 
-export const ConnectPairGame: React.FC<ConnectPairGameProps> = ({ items, title }) => {
-  const [cards, setCards] = useState<CardState[]>([])
-  const [selectedLeft, setSelectedLeft] = useState<string | null>(null)
+export default function MathConnectPairsGame({ items, title, category }: MathConnectPairsGameProps) {
+  const router = useRouter()
   const [matchedPairs, setMatchedPairs] = useState(0)
+  const [mistakes, setMistakes] = useState(0)
+  const [selectedLeft, setSelectedLeft] = useState<string | null>(null)
   const [isChecking, setIsChecking] = useState(false)
-
-  useEffect(() => {
-    initializeGame()
-  }, [items])
+  const [cards, setCards] = useState<any[]>([])
 
   const initializeGame = () => {
-    const leftCards: CardState[] = items.map((item, index) => ({
+    const leftCards = items.map((item, index) => ({
       id: `left-${index}`,
       content: item.left,
       side: 'left' as const,
@@ -41,7 +34,7 @@ export const ConnectPairGame: React.FC<ConnectPairGameProps> = ({ items, title }
       isError: false,
     }))
 
-    const rightCards: CardState[] = items.map((item, index) => ({
+    const rightCards = items.map((item, index) => ({
       id: `right-${index}`,
       content: item.right,
       side: 'right' as const,
@@ -60,12 +53,15 @@ export const ConnectPairGame: React.FC<ConnectPairGameProps> = ({ items, title }
     setIsChecking(false)
   }
 
+  useEffect(() => {
+    initializeGame()
+  }, [items])
+
   const handleCardClick = (cardId: string) => {
     const card = cards.find(c => c.id === cardId)
     if (!card || card.isMatched || isChecking) return
 
     if (card.side === 'left') {
-      // Select left card
       setCards(prev => prev.map(c => 
         c.id === cardId 
           ? { ...c, isSelected: true }
@@ -75,7 +71,6 @@ export const ConnectPairGame: React.FC<ConnectPairGameProps> = ({ items, title }
       ))
       setSelectedLeft(cardId)
     } else if (card.side === 'right' && selectedLeft) {
-      // Check match with selected left card
       setIsChecking(true)
       const leftCard = cards.find(c => c.id === selectedLeft)
       
@@ -93,21 +88,16 @@ export const ConnectPairGame: React.FC<ConnectPairGameProps> = ({ items, title }
         }, 500)
       } else {
         // Wrong match
-        setCards(prev => prev.map(c => 
-          c.id === cardId || c.id === selectedLeft
-            ? { ...c, isError: true }
-            : c
-        ))
-        
+        setMistakes(prev => prev + 1)
         setTimeout(() => {
           setCards(prev => prev.map(c => 
-            c.id === cardId || c.id === selectedLeft
-              ? { ...c, isSelected: false, isError: false }
+            (c.id === selectedLeft || c.id === cardId)
+              ? { ...c, isSelected: false, isError: true }
               : c
           ))
           setSelectedLeft(null)
           setIsChecking(false)
-        }, 800)
+        }, 1000)
       }
     }
   }
@@ -116,72 +106,89 @@ export const ConnectPairGame: React.FC<ConnectPairGameProps> = ({ items, title }
   const rightCards = cards.filter(c => c.side === 'right')
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#EEE9FF] via-[#F5F0FF] to-[#FAF5FF] px-2 py-4">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-[#EEE9FF] via-[#F5F0FF] to-[#FAF5FF] px-3 py-4 sm:px-4 sm:py-6">
+      <div className="mx-auto max-w-5xl">
         {/* Header */}
-        <div
-          className="text-center mb-4"
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-5 text-center sm:mb-7"
         >
-          <h1 className="text-lg font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent mb-2">
+          <h1 className="mb-2 bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-2xl font-bold leading-tight text-transparent sm:mb-3 sm:text-3xl md:text-4xl">
             {title}
           </h1>
           
-          <div className="text-xs text-gray-600 font-medium">
+          <div className="text-sm font-medium text-gray-600 sm:text-base md:text-lg">
             Знайдено: <span className="text-primary-600 font-bold">{matchedPairs}</span> / {items.length}
           </div>
-        </div>
+        </motion.div>
 
         {/* Game Board */}
-        <div className="flex gap-1 mb-2" style={{ height: '70vh', maxHeight: '70vh', width: '144px', minWidth: '144px', maxWidth: '144px', margin: '0 auto' }}>
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 md:gap-6">
           {/* Left Column */}
-          <div className="space-y-1 min-w-0 flex-shrink-0 overflow-y-auto" style={{ width: '70px', minWidth: '70px', maxWidth: '70px' }}>
-            <h2 className="text-xs font-semibold text-gray-700 mb-1 text-center">Ліва колонка</h2>
+          <div className="space-y-2 sm:space-y-3">
+            <h2 className="text-xl font-semibold text-gray-700 mb-4 text-center">Ліва колонка</h2>
             {leftCards.map((card, index) => (
-              <button
+              <motion.div
                 key={card.id}
-                onClick={() => handleCardClick(card.id)}
-                className={`
-                    w-full p-0.5 rounded-lg shadow-sm transition-all duration-300 text-center font-medium text-xs overflow-hidden
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.05 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <button
+                  onClick={() => handleCardClick(card.id)}
+                  className={`
+                    min-h-[3.25rem] w-full rounded-xl px-2 py-3 text-center text-sm font-medium leading-snug shadow-md transition-all duration-300 sm:min-h-[3.75rem] sm:rounded-2xl sm:px-3 sm:py-4 sm:text-base
                     ${card.isMatched 
                       ? 'bg-green-100 text-green-800 line-through opacity-75' 
                       : card.isError
-                      ? 'bg-red-100 text-red-800 border-2 border-red-400 animate-pulse'
+                      ? 'bg-red-100 text-red-800 border-2 border-red-400 animate-shake'
                       : card.isSelected
                       ? 'bg-purple-100 border-2 border-purple-500 text-purple-800 shadow-lg'
                       : 'bg-white hover:bg-gray-50 hover:shadow-lg text-gray-800'
                     }
                   `}
-                  style={{ minWidth: '60px' }}
                   disabled={card.isMatched || isChecking}
                 >
-                  <span className="truncate">{card.content}</span>
+                  {card.content}
                 </button>
+              </motion.div>
             ))}
           </div>
 
           {/* Right Column */}
-          <div className="space-y-1 min-w-0 flex-shrink-0 overflow-y-auto" style={{ width: '70px', minWidth: '70px', maxWidth: '70px' }}>
-            <h2 className="text-xs font-semibold text-gray-700 mb-1 text-center">Права колонка</h2>
+          <div className="space-y-2 sm:space-y-3">
+            <h2 className="text-xl font-semibold text-gray-700 mb-4 text-center">Права колонка</h2>
             {rightCards.map((card, index) => (
-              <button
+              <motion.div
                 key={card.id}
-                onClick={() => handleCardClick(card.id)}
-                className={`
-                    w-full p-0.5 rounded-lg shadow-sm transition-all duration-300 text-center font-medium text-xs overflow-hidden
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.05 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <button
+                  onClick={() => handleCardClick(card.id)}
+                  className={`
+                    min-h-[3.25rem] w-full rounded-xl px-2 py-3 text-center text-sm font-medium leading-snug shadow-md transition-all duration-300 sm:min-h-[3.75rem] sm:rounded-2xl sm:px-3 sm:py-4 sm:text-base
                     ${card.isMatched 
                       ? 'bg-green-100 text-green-800 line-through opacity-75' 
                       : card.isError
-                      ? 'bg-red-100 text-red-800 border-2 border-red-400 animate-pulse'
+                      ? 'bg-red-100 text-red-800 border-2 border-red-400 animate-shake'
                       : card.isSelected
                       ? 'bg-purple-100 border-2 border-purple-500 text-purple-800 shadow-lg'
                       : 'bg-white hover:bg-gray-50 hover:shadow-lg text-gray-800'
                     }
                   `}
-                  style={{ minWidth: '60px' }}
                   disabled={card.isMatched || isChecking}
                 >
-                  <span className="truncate">{card.content}</span>
+                  {card.content}
                 </button>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -191,17 +198,30 @@ export const ConnectPairGame: React.FC<ConnectPairGameProps> = ({ items, title }
           isOpen={matchedPairs === items.length}
           isWon={true}
           onPlayAgain={initializeGame}
-          onSelectLevel={undefined}
-          onMainMenu={() => window.location.href = '/math'}
+          onSelectLevel={() => router.push('/math/connect-pairs')}
+          onMainMenu={() => router.push('/math')}
           title="Чудово!"
           winMessage="Гру завершено!"
-          playAgainText="Грати знову"
+          playAgainText="Ще раз"
           mainMenuText="В головне меню"
-          hasLevels={false}
-          levelSelectHref="/math"
+          hasLevels={true}
+          levelSelectHref="/math/connect-pairs"
           showCurrentLevel={false}
         />
+
       </div>
+
+      <style jsx>{`
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
+          20%, 40%, 60%, 80% { transform: translateX(2px); }
+        }
+        
+        .animate-shake {
+          animation: shake 0.5s ease-in-out;
+        }
+      `}</style>
     </div>
   )
 }

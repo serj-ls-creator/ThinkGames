@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { UKRAINIAN_LEVELS } from '../../../../../src/constants/ukrainianWords'
 import { saveGameResult } from '../../../../../src/lib/points'
 import { useAuth } from '@/src/context/AuthContext'
+import GameEndModal from '../../../../../src/components/GameEndModal'
 
 interface LetterButton {
   letter: string
@@ -432,37 +433,24 @@ export default function WriteWordGamePage({ params }: WriteWordGamePageProps) {
           </motion.div>
         )}
 
-        {/* Завершение уровня */}
-        {showLevelComplete && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="fixed inset-0 flex items-center justify-center z-50 bg-black/50"
-          >
-            <div className="bg-white rounded-2xl p-8 shadow-2xl max-w-md mx-4">
-              <h2 className="text-3xl font-bold text-center mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                🎉 Рівень завершено!
-              </h2>
-              <p className="text-gray-600 text-center mb-6">
-                Ти успішно пройшов рівень {currentLevel}!
-              </p>
-              <div className="flex flex-col gap-3">
-                <button
-                  onClick={handleNextLevel}
-                  className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 py-3 rounded-full transition-colors font-semibold"
-                >
-                  {currentLevel < 10 ? `Наступний рівень →` : 'До списку рівнів'}
-                </button>
-                <button
-                  onClick={handleBackToLevels}
-                  className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-3 rounded-full transition-colors font-semibold"
-                >
-                  До списку рівнів
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
+        {/* Универсальное модальное окно завершения уровня */}
+        <GameEndModal
+          isOpen={showLevelComplete}
+          isWon={true}
+          onPlayAgain={() => {
+            setShowLevelComplete(false)
+            initializeLevel()
+          }}
+          onSelectLevel={() => router.push('/ukrainian/write-word/levels')}
+          onMainMenu={() => router.push('/ukrainian')}
+          title="Чудово!"
+          winMessage={`Рівень ${currentLevel} завершено!`}
+          playAgainText="Повторити рівень"
+          mainMenuText="В головне меню"
+          hasLevels={true}
+          levelSelectHref="/ukrainian/write-word/levels"
+          showCurrentLevel={false}
+        />
 
         {/* Стили для анимации встряски */}
         <style jsx>{`

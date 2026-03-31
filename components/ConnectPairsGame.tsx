@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { saveGameResult } from '../src/lib/points'
 import { useAuth } from '../src/context/AuthContext'
 import { useRouter } from 'next/navigation'
+import GameEndModal from '../src/components/GameEndModal'
 
 // Проверка на мобильное устройство
 const isMobile = () => {
@@ -329,30 +330,21 @@ export const ConnectPairsGame: React.FC<ConnectPairsGameProps> = ({ items, title
         </div>
 
         {/* Victory Screen */}
-        {matchedPairs === items.length && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
-            className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
-          >
-            <div className="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl">
-              <div className="text-6xl mb-4">🎉</div>
-              <h2 className="text-3xl font-bold text-green-600 mb-4">
-                Вітаю! Гру завершено!
-              </h2>
-              <p className="text-gray-600 mb-6">
-                Ви знайшли всі {items.length} пар!
-              </p>
-              <button
-                onClick={initializeGame}
-                className="px-8 py-3 bg-gradient-to-r from-primary-500 to-secondary-500 text-white font-bold rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
-              >
-                Грати знову
-              </button>
-            </div>
-          </motion.div>
-        )}
+        <GameEndModal
+          isOpen={matchedPairs === items.length}
+          isWon={true}
+          onPlayAgain={initializeGame}
+          onSelectLevel={() => router.push('/math/connect-pairs')}
+          onMainMenu={() => router.push('/dutch')}
+          title="Чудово!"
+          winMessage="Гру завершено!"
+          playAgainText="Ще раз"
+          mainMenuText="В головне меню"
+          hasLevels={true}
+          levelSelectHref="/math/connect-pairs"
+          showCurrentLevel={false}
+        />
+
       </div>
 
       <style jsx>{`
