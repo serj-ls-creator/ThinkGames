@@ -122,7 +122,7 @@ export default function Joystick({
       window.addEventListener('touchmove', handleGlobalMove, { passive: false })
       window.addEventListener('touchend', handleGlobalUp)
       window.addEventListener('touchcancel', handleGlobalUp)
-      window.addEventListener('pointermove', handleGlobalMove)
+      window.addEventListener('pointermove', handleGlobalMove, { passive: false })
       window.addEventListener('pointerup', handleGlobalUp)
       window.addEventListener('pointercancel', handleGlobalUp)
     }
@@ -191,15 +191,11 @@ export default function Joystick({
         style={{
           width: stickSize,
           height: stickSize,
-          left: '50%',
-          top: '50%',
-          transform: `translate(calc(-50% + ${position.x}px), calc(-50% + ${position.y}px))`,
-          x: 0,
-          y: 0
+          left: `${size/2 + position.x - stickSize/2}px`,
+          top: `${size/2 + position.y - stickSize/2}px`,
+          transform: 'none'
         }}
         animate={{
-          x: position.x,
-          y: position.y,
           scale: isActive ? 1.1 : 1
         }}
         transition={{

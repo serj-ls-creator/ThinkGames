@@ -40,8 +40,8 @@ export const ASTEROID_RADIUS = 30
 export const COLLISION_DISTANCE = 35
 
 // Границы карты и сила отталкивания (в координатах canvas)
-export const MAP_WIDTH = 600  // от -300 до +300
-export const MAP_HEIGHT = 400 // от -200 до +200
+export const MAP_WIDTH = 600  // от -300 до +300 (десктоп)
+export const MAP_HEIGHT = 440 // от -220 до +220 (десктоп)
 export const BOUNDARY_FORCE = 50  // Уменьшено с 200 до 50
 export const BOUNDARY_DAMPING = 0.8 // Увеличено с 0.7 до 0.8 (меньше затухания)
 export const BOUNDARY_MARGIN = 30 // Зона мягкого отталкивания
@@ -50,7 +50,7 @@ import { getRandomLevelVariant, LevelVariant, GravityLevelData, GRAVITY_LEVELS_D
 
 export function applyBoundaryForces(obj: { x: number, y: number, vx: number, vy: number, radius: number }, deltaTime: number) {
   const halfWidth = MAP_WIDTH / 2  // 300
-  const halfHeight = MAP_HEIGHT / 2 // 200
+  const halfHeight = MAP_HEIGHT / 2 // 220
   
   let newX = obj.x
   let newY = obj.y
@@ -105,70 +105,78 @@ export function applyBoundaryForces(obj: { x: number, y: number, vx: number, vy:
   return { x: newX, y: newY, vx: newVx, vy: newVy }
 }
 
-export function generateLevel(level: number): GameState {
+export function generateLevel(level: number, randomSeed?: number, variant?: LevelVariant, canvasWidth?: number, canvasHeight?: number): GameState {
   // Получаем детерминированный вариант из файла (чтобы избежать ошибок гидратации)
-  const levelVariant = getRandomLevelVariant(level)
+  const levelVariant = variant || getRandomLevelVariant(level)
+  
+  // Если seed не передан, используем текущее время для случайности
+  const seed = randomSeed || Date.now()
+  
+  // Используем переданные размеры canvas или стандартные
+  const mapWidth = canvasWidth || MAP_WIDTH
+  const mapHeight = canvasHeight || MAP_HEIGHT
   
   // Ракета всегда в левом нижнем углу
   const ship: Ship = {
     x: -250, // Левый край (учитывая MAP_WIDTH = 600, от -300 до +300)
-    y: 150,  // Нижний край (учитывая MAP_HEIGHT = 400, от -200 до +200)
+    y: 190,  // Нижний край (учитывая MAP_HEIGHT = 440, от -220 до +220)
     vx: 0,
     vy: 0,
     angle: 0,
     thrust: false
   }
 
-  // Детерминированная случайная позиция на карте
-const getDeterministicPosition = (index: number, level: number) => {
-  // Используем индекс и уровень для создания "случайной" но детерминированной позиции
-  const seed = level * 1000 + index * 100
-  const angle = ((seed * 7) % 360) * Math.PI / 180 // Детерминированный угол
-  const distance = 100 + ((seed * 13) % 150) // Детерминированное расстояние от центра
-  
-  return {
-    x: Math.cos(angle) * distance,
-    y: Math.sin(angle) * distance
+  // Случайная позиция на карте с использованием seed
+  const getRandomPosition = (index: number, useSeed: number) => {
+    // Используем seed для создания случайной позиции
+    const positionSeed = useSeed + index * 1000
+    const angle = ((positionSeed * 7) % 360) * Math.PI / 180 // Случайный угол
+    
+    // Адаптивный разброс в зависимости от размеров поля
+    const maxDistance = Math.min(mapWidth, mapHeight) * 0.4 // 40% от меньшего размера
+    const distance = maxDistance * 0.6 + ((positionSeed * 13) % (maxDistance * 0.4)) // 60%-100% от maxDistance
+    
+    return {
+      x: Math.cos(angle) * distance,
+      y: Math.sin(angle) * distance
+    }
   }
-}
 
-// Детерминированная случайная скорость
-const getDeterministicVelocity = (index: number, level: number) => {
-  const seed = level * 1000 + index * 100
-  const speed = 0.3 + ((seed * 17) % 50) / 100 // Скорость от 0.3 до 0.8
-  const angle = ((seed * 23) % 360) * Math.PI / 180
-  
-  return {
-    vx: Math.cos(angle) * speed,
-    vy: Math.sin(angle) * speed
+  // Случайная скорость с использованием seed
+  const getRandomVelocity = (index: number, useSeed: number) => {
+    const velocitySeed = useSeed + index * 1000
+    const speed = 0.3 + ((velocitySeed * 17) % 50) / 100 // Скорость от 0.3 до 0.8
+    const angle = ((velocitySeed * 23) % 360) * Math.PI / 180 // Случайное направление
+    
+    return {
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed
+    }
   }
-}
 
-// Детерминированные цвета для астероидов (чтобы избежать Math.random())
-const getDeterministicColor = (index: number) => {
-    const colors = [
-      '#10B981', '#059669', '#047857', '#065F46', '#064E3B', // зеленые
-      '#EF4444', '#DC2626', '#B91C1C', '#991B1B', '#7F1D1D', // красные
-      '#3B82F6', '#2563EB', '#1D4ED8', '#1E40AF', '#1E3A8A', // синие
-      '#F59E0B', '#D97706', '#B45309', '#92400E', '#78350F', // оранжевые
-      '#8B5CF6', '#7C3AED', '#6D28D9', '#5B21B6', '#4C1D95', // фиолетовые
-      '#EC4899', '#DB2777', '#BE185D', '#9F1239', '#831843', // розовые
-      '#14B8A6', '#0D9488', '#0F766E', '#115E59', '#134E4A', // бирюзовые
-      '#F97316', '#EA580C', '#C2410C', '#9A3412', '#7C2D12', // темно-оранжевые
-      '#6366F1', '#4F46E5', '#4338CA', '#3730A3', '#312E81', // индиго
-      '#84CC16', '#65A30D', '#4D7C0F', '#365314', '#1A2E05'  // лайм
-    ]
-    return colors[index % colors.length]
-  }
+// Последовательные цвета для астероидов (по порядку)
+const getSequentialColor = (asteroidIndex: number) => {
+  const colors = [
+    '#8B5CF6', // 1. Фиолетовый
+    '#EF4444', // 2. Красный  
+    '#10B981', // 3. Зеленый
+    '#F59E0B', // 4. Оранжевый
+    '#1F2937'  // 5. Черный
+  ]
+  return colors[asteroidIndex % colors.length]
+}
 
   // Создаем правильные астероиды
   const correctAsteroids: Asteroid[] = []
   const correctCount = level === 1 ? 1 : level === 2 ? 2 : 2
   
+  // Берем только нужное количество правильных ответов без дубликатов
+  const uniqueCorrectAnswers = levelVariant.correctAnswers.slice(0, correctCount)
+  
   for (let i = 0; i < correctCount; i++) {
-    const correctAnswer = levelVariant.correctAnswers[i % levelVariant.correctAnswers.length]
-    const position = getDeterministicPosition(i, level)
-    const velocity = getDeterministicVelocity(i, level)
+    const correctAnswer = uniqueCorrectAnswers[i]
+    const position = getRandomPosition(i, seed)
+    const velocity = getRandomVelocity(i, seed)
     
     correctAsteroids.push({
       id: `correct-${i}`,
@@ -180,7 +188,7 @@ const getDeterministicColor = (index: number) => {
       result: correctAnswer.result,
       isCorrect: true,
       radius: ASTEROID_RADIUS,
-      color: getDeterministicColor(i + level * 10) // Детерминированный цвет
+      color: getSequentialColor(i) // 0: фиолетовый, 1: красный, 2: зеленый
     })
   }
 
@@ -188,10 +196,13 @@ const getDeterministicColor = (index: number) => {
   const wrongAsteroids: Asteroid[] = []
   const wrongCount = level === 1 ? 2 : level === 2 ? 2 : 3
   
+  // Берем только нужное количество неправильных ответов без дубликатов
+  const uniqueWrongAnswers = levelVariant.wrongAnswers.slice(0, wrongCount)
+  
   for (let i = 0; i < wrongCount; i++) {
-    const wrongAnswer = levelVariant.wrongAnswers[i % levelVariant.wrongAnswers.length]
-    const position = getDeterministicPosition(i + 10, level) // +10 чтобы не пересекаться с правильными
-    const velocity = getDeterministicVelocity(i + 10, level)
+    const wrongAnswer = uniqueWrongAnswers[i]
+    const position = getRandomPosition(i + 20, seed) // +20 чтобы не пересекаться с правильными
+    const velocity = getRandomVelocity(i + 10, seed)
     
     wrongAsteroids.push({
       id: `wrong-${i}`,
@@ -203,7 +214,7 @@ const getDeterministicColor = (index: number) => {
       result: wrongAnswer.result,
       isCorrect: false,
       radius: ASTEROID_RADIUS,
-      color: getDeterministicColor(i + level * 20) // Детерминированный цвет
+      color: getSequentialColor(i + correctCount) // Продолжение последовательности после правильных
     })
   }
 
@@ -212,10 +223,11 @@ const getDeterministicColor = (index: number) => {
   
   // Детерминированное перемешивание (чтобы избежать Math.random())
   const shuffleSeed = level
-  for (let i = allAsteroids.length - 1; i > 0; i--) {
-    const j = (shuffleSeed + i) % (i + 1);
-    [allAsteroids[i], allAsteroids[j]] = [allAsteroids[j], allAsteroids[i]]
-  }
+  const shuffled = allAsteroids.sort((a, b) => {
+    const hashA = (shuffleSeed + a.id.charCodeAt(0)) % 100
+    const hashB = (shuffleSeed + b.id.charCodeAt(0)) % 100
+    return hashA - hashB
+  })
 
   return {
     ship,
@@ -229,12 +241,17 @@ const getDeterministicColor = (index: number) => {
   }
 }
 
-export function updatePhysics(gameState: GameState, deltaTime: number): GameState {
+export function updatePhysics(gameState: GameState, deltaTime: number, canvasWidth?: number, canvasHeight?: number): GameState {
   const newState = { ...gameState }
   const { ship, asteroids } = newState
   
   // Определяем количество правильных астероидов для текущего уровня
   const correctAsteroidsNeeded = gameState.level === 1 ? 1 : gameState.level === 2 ? 2 : 2
+  
+  // Получаем правильные ответы из данных уровня по planetNumber
+  const levelData = GRAVITY_LEVELS_DATA.find(data => data.level === gameState.level)
+  const currentVariant = levelData?.variants.find(v => v.planetNumber === gameState.planetNumber)
+  const correctAnswers = currentVariant?.correctAnswers || []
 
   // Применяем гравитацию к кораблю
   const distanceToCenter = Math.sqrt(ship.x * ship.x + ship.y * ship.y)
@@ -258,8 +275,10 @@ export function updatePhysics(gameState: GameState, deltaTime: number): GameStat
   ship.y += ship.vy * deltaTime
 
   // ПРЯМОЕ ЗАМЕДЛЕНИЕ ПРИ СТОЛКНОВЕНИИ СО СТЕНАМИ
-  const halfWidth = MAP_WIDTH / 2  // 300
-  const halfHeight = MAP_HEIGHT / 2 // 200
+  const mapWidth = canvasWidth || MAP_WIDTH
+  const mapHeight = canvasHeight || MAP_HEIGHT
+  const halfWidth = mapWidth / 2  
+  const halfHeight = mapHeight / 2
   
   let wallHit = false
   
@@ -317,15 +336,31 @@ export function updatePhysics(gameState: GameState, deltaTime: number): GameStat
       asteroid.vy += ay * deltaTime
     }
     
+    // ДВИЖЕНИЕ АСТЕРОИДОВ
     asteroid.x += asteroid.vx * deltaTime
     asteroid.y += asteroid.vy * deltaTime
     
-    // Применяем силы отталкивания от границ для астероида
-    const asteroidBoundaryResult = applyBoundaryForces(asteroid, deltaTime)
-    asteroid.x = asteroidBoundaryResult.x
-    asteroid.y = asteroidBoundaryResult.y
-    asteroid.vx = asteroidBoundaryResult.vx
-    asteroid.vy = asteroidBoundaryResult.vy
+    // Применяем силы отталкивания от границ для астероида (адаптивные размеры)
+    if (asteroid.x - ASTEROID_RADIUS < -halfWidth) {
+      asteroid.x = -halfWidth + ASTEROID_RADIUS
+      asteroid.vx = Math.abs(asteroid.vx) * 0.001
+      asteroid.vy *= 0.001
+    }
+    if (asteroid.x + ASTEROID_RADIUS > halfWidth) {
+      asteroid.x = halfWidth - ASTEROID_RADIUS
+      asteroid.vx = -Math.abs(asteroid.vx) * 0.001
+      asteroid.vy *= 0.001
+    }
+    if (asteroid.y - ASTEROID_RADIUS < -halfHeight) {
+      asteroid.y = -halfHeight + ASTEROID_RADIUS
+      asteroid.vy = Math.abs(asteroid.vy) * 0.001
+      asteroid.vx *= 0.001
+    }
+    if (asteroid.y + ASTEROID_RADIUS > halfHeight) {
+      asteroid.y = halfHeight - ASTEROID_RADIUS
+      asteroid.vy = -Math.abs(asteroid.vy) * 0.001
+      asteroid.vx *= 0.001
+    }
   })
 
   // Проверяем столкновения
@@ -342,12 +377,16 @@ export function updatePhysics(gameState: GameState, deltaTime: number): GameStat
     const distance = Math.sqrt(dx * dx + dy * dy)
     
     if (distance < COLLISION_DISTANCE) {
-      if (asteroid.isCorrect) {
+      // Проверяем правильный ли ответ на астероиде
+      const isCorrectAnswer = correctAnswers.some(answer => answer.result === asteroid.result)
+      
+      if (isCorrectAnswer) {
         newState.score++
         // Проверяем победу
         if (newState.score >= correctAsteroidsNeeded) {
           newState.status = 'won'
         }
+        // Не прерываем цикл, а помечаем астероид для удаления
         return false // Удаляем правильный астероид
       } else {
         newState.status = 'lost'

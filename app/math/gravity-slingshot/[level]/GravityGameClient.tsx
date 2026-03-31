@@ -4,20 +4,10 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../../../../src/context/AuthContext'
 import { saveGameResult } from '../../../../src/lib/points'
+import { generateLevel, GameState, PLANET_RADIUS, SHIP_RADIUS, ASTEROID_RADIUS, updatePhysics } from '../../../../src/lib/gravityGame'
+import { getNextVariant, resetVariantIndex, LevelVariant } from '../../../../src/data/gravityGameLevels'
 import GameEndModal from '../../../../src/components/GameEndModal'
 import Joystick from '../../../../src/components/ui/Joystick'
-import { resetVariantIndex, getNextVariant } from '../../../../src/data/gravityGameLevels'
-import { 
-  generateLevel, 
-  updatePhysics, 
-  applyBoundaryForces, 
-  GameState, 
-  Ship, 
-  Asteroid,
-  PLANET_RADIUS,
-  SHIP_RADIUS,
-  ASTEROID_RADIUS
-} from '../../../../src/lib/gravityGame'
 
 export default function GravityGameClient({ level }: { level: number }) {
   const { user } = useAuth()
@@ -27,7 +17,21 @@ export default function GravityGameClient({ level }: { level: number }) {
   const keysRef = useRef<Set<string>>(new Set())
   const hasSaved = useRef(false)
   
-  const [gameState, setGameState] = useState<GameState>(() => generateLevel(level))
+  // Определяем размеры canvas в зависимости от устройства
+  const [canvasSize, setCanvasSize] = useState({ width: 600, height: 440 })
+  
+  useEffect(() => {
+    const checkDevice = () => {
+      const isMobile = window.innerWidth < 768
+      setCanvasSize(isMobile ? { width: 400, height: 450 } : { width: 600, height: 440 })
+    }
+    
+    checkDevice()
+    window.addEventListener('resize', checkDevice)
+    return () => window.removeEventListener('resize', checkDevice)
+  }, [])
+  
+  const [gameState, setGameState] = useState<GameState>(() => generateLevel(level, Date.now(), undefined, canvasSize.width, canvasSize.height))
   const [isPaused, setIsPaused] = useState(false)
   const [joystickVector, setJoystickVector] = useState({ x: 0, y: 0 })
   const [isMobile, setIsMobile] = useState(false)
@@ -52,7 +56,7 @@ export default function GravityGameClient({ level }: { level: number }) {
 
   // Сброс игры
   const resetGame = useCallback(() => {
-    setGameState(generateLevel(level))
+    setGameState(generateLevel(level, Date.now()))
     setIsPaused(false)
     hasSaved.current = false
     lastTimeRef.current = 0
@@ -155,8 +159,9 @@ export default function GravityGameClient({ level }: { level: number }) {
         newState.ship = ship
 
         // ПРЯМОЕ ЗАМЕДЛЕНИЕ ПЕРЕД ОТРИСОВКОЙ (максимально простой подход)
-        const halfWidth = 290  // Чуть меньше реальных границ
-        const halfHeight = 190 // Чуть меньше реальных границ
+        const canvas = canvasRef.current
+        const halfWidth = canvas ? (canvas.width / 2) - 5 : 295  // Минимальный отступ от границ
+        const halfHeight = canvas ? (canvas.height / 2) - 5 : 215 // Минимальный отступ от границ
         
         let wallHit = false
         
@@ -189,7 +194,7 @@ export default function GravityGameClient({ level }: { level: number }) {
         newState.wallHit = wallHit
 
         // Обновляем физику
-        return updatePhysics(newState, deltaTime * 60) // Нормализуем deltaTime
+        return updatePhysics(newState, deltaTime * 60, canvasSize.width, canvasSize.height) // Нормализуем deltaTime
       })
 
       animationRef.current = requestAnimationFrame(gameLoop)
@@ -202,24 +207,24 @@ export default function GravityGameClient({ level }: { level: number }) {
         cancelAnimationFrame(animationRef.current)
       }
     }
-  }, [isPaused, gameState.status, joystickVector]) // Добавил joystickVector в зависимости
+  }, [isPaused, gameState.status, joystickVector, gameState.asteroids.length]) // Добавил joystickVector и gameState.asteroids.length
 
   // Рендеринг игры
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
+    const canvasElement = canvasRef.current
+    if (!canvasElement) return
 
-    const ctx = canvas.getContext('2d')
+    const ctx = canvasElement.getContext('2d')
     if (!ctx) return
 
     // Очистка canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.clearRect(0, 0, canvasElement.width, canvasElement.height)
 
     // Сохраняем состояние контекста
     ctx.save()
 
     // Перемещаем центр координат в центр canvas
-    ctx.translate(canvas.width / 2, canvas.height / 2)
+    ctx.translate(canvasElement.width / 2, canvasElement.height / 2)
 
     // Рисуем планету
     const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, PLANET_RADIUS)
@@ -302,9 +307,9 @@ export default function GravityGameClient({ level }: { level: number }) {
 
     // Рисуем границы карты
     ctx.strokeStyle = '#E5E7EB'
-    ctx.lineWidth = 2
+    ctx.lineWidth = 5
     ctx.setLineDash([5, 5]) // Пунктирная линия
-    ctx.strokeRect(-300, -200, 600, 400)
+    ctx.strokeRect(-canvasElement.width/2, -canvasElement.height/2, canvasElement.width, canvasElement.height)
     ctx.setLineDash([]) // Сбрасываем пунктир
 
     // Восстанавливаем состояние контекста
@@ -323,8 +328,11 @@ export default function GravityGameClient({ level }: { level: number }) {
 
   const handlePlayAgain = () => {
     // Получаем следующий вариант и сбрасываем игру
-    getNextVariant(level)
-    resetGame()
+    const nextVariant = getNextVariant(level) // Получаем следующий вариант планеты
+    setGameState(generateLevel(level, Date.now(), nextVariant, canvasSize.width, canvasSize.height)) // Генерируем уровень с новым вариантом
+    setIsPaused(false)
+    hasSaved.current = false
+    lastTimeRef.current = 0
   }
 
   return (
@@ -351,35 +359,29 @@ export default function GravityGameClient({ level }: { level: number }) {
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.2, duration: 0.3 }}
-        className="mb-4 flex flex-wrap gap-4 justify-center"
+        className="mb-4 flex gap-2 justify-center"
       >
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg px-6 py-3 border-2 border-purple-200">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🎯</span>
-            <div>
-              <p className="text-xs text-gray-600 font-medium">Рівень</p>
-              <p className="text-xl font-bold text-purple-600">{gameState.level}</p>
-            </div>
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg px-3 py-2 border-2 border-purple-200">
+          <div className="flex items-center gap-1">
+            <span className="text-lg">🎯</span>
+            <span className="text-xs text-gray-600 font-medium">Рівень:</span>
+            <span className="text-sm font-bold text-purple-600">{gameState.level}</span>
           </div>
         </div>
         
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg px-6 py-3 border-2 border-pink-200">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">⭐</span>
-            <div>
-              <p className="text-xs text-gray-600 font-medium">Зібрано</p>
-              <p className="text-xl font-bold text-pink-600">{gameState.score}/{gameState.level === 1 ? 1 : gameState.level === 2 ? 2 : 2}</p>
-            </div>
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg px-3 py-2 border-2 border-pink-200">
+          <div className="flex items-center gap-1">
+            <span className="text-lg">⭐</span>
+            <span className="text-xs text-gray-600 font-medium">Зібрано:</span>
+            <span className="text-sm font-bold text-pink-600">{gameState.score}/{gameState.level === 1 ? 1 : gameState.level === 2 ? 2 : 2}</span>
           </div>
         </div>
 
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg px-6 py-3 border-2 border-blue-200">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🪐</span>
-            <div>
-              <p className="text-xs text-gray-600 font-medium">Планета</p>
-              <p className="text-xl font-bold text-blue-600">{gameState.planetNumber}</p>
-            </div>
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg px-3 py-2 border-2 border-blue-200">
+          <div className="flex items-center gap-1">
+            <span className="text-lg">🪐</span>
+            <span className="text-xs text-gray-600 font-medium">Планета:</span>
+            <span className="text-sm font-bold text-blue-600">{gameState.planetNumber}</span>
           </div>
         </div>
       </motion.div>
@@ -395,8 +397,8 @@ export default function GravityGameClient({ level }: { level: number }) {
         <div className="relative bg-white rounded-3xl shadow-2xl p-6 border-4 border-white/50">
           <canvas
             ref={canvasRef}
-            width={600}
-            height={400}
+            width={canvasSize.width}
+            height={canvasSize.height}
             className="w-full h-auto max-w-full rounded-2xl border-2 border-purple-200"
             style={{ touchAction: 'none' }}
           />
