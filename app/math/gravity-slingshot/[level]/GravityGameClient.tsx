@@ -31,7 +31,10 @@ export default function GravityGameClient({ level }: { level: number }) {
     return () => window.removeEventListener('resize', checkDevice)
   }, [])
   
-  const [gameState, setGameState] = useState<GameState>(() => generateLevel(level, Date.now(), undefined, canvasSize.width, canvasSize.height))
+  const [gameState, setGameState] = useState<GameState>(() => {
+    hasSaved.current = false // Сбрасываем флаг при инициализации
+    return generateLevel(level, Date.now(), undefined, canvasSize.width, canvasSize.height)
+  })
   const [isPaused, setIsPaused] = useState(false)
   const [joystickVector, setJoystickVector] = useState({ x: 0, y: 0 })
   const [isMobile, setIsMobile] = useState(false)
@@ -102,7 +105,6 @@ export default function GravityGameClient({ level }: { level: number }) {
     if (gameState.status === 'won' && !hasSaved.current && user?.id) {
       hasSaved.current = true
       saveGameResult(user.id, 'math', 10, false)
-      console.log('!!! GRAVITY GAME COMPLETE: 10 XP SENT !!!')
     }
   }, [gameState.status, user?.id])
 

@@ -49,13 +49,11 @@ export default function WriteWordGamePage({ params }: WriteWordGamePageProps) {
   const speak = (text: string, lang: string = 'uk-UA') => {
     // Проверка на мобильное устройство
     if (!isMobile()) {
-      console.log('Desktop detected - speech synthesis disabled');
       return;
     }
     
     // Проверка доступности Speech Synthesis
     if (typeof window === 'undefined' || !window.speechSynthesis) {
-      console.log('Speech synthesis not available');
       return;
     }
     
@@ -66,30 +64,24 @@ export default function WriteWordGamePage({ params }: WriteWordGamePageProps) {
       const voices = synth.getVoices();
       const utterance = new SpeechSynthesisUtterance(text);
       
-      console.log('Available voices:', voices.map(v => ({ name: v.name, lang: v.lang })));
-      
       // Ищем голос максимально точно
       const targetVoice = voices.find(v => 
-        v.lang.replace('_', '-').toLowerCase() === lang.toLowerCase() ||
-        v.lang.toLowerCase().startsWith(lang.split('-')[0])
+        v.lang.toLowerCase().includes('uk') || 
+        v.lang.toLowerCase().includes('ua')
       );
 
       if (targetVoice) {
         utterance.voice = targetVoice;
-        console.log('Using Ukrainian voice:', targetVoice.name);
       } else {
         // Fallback - ищем любой славянский голос
         const fallbackVoice = voices.find(v => 
-          v.lang.toLowerCase().includes('uk') ||
-          v.lang.toLowerCase().includes('ru') ||
+          v.lang.toLowerCase().includes('ru') || 
           v.lang.toLowerCase().includes('pl') ||
+          v.lang.toLowerCase().includes('bg') ||
           v.lang.toLowerCase().includes('cs')
         );
         if (fallbackVoice) {
           utterance.voice = fallbackVoice;
-          console.log('Using fallback Slavic voice:', fallbackVoice.name, 'lang:', fallbackVoice.lang);
-        } else {
-          console.log('No Slavic voice found, using default voice');
         }
       }
       
@@ -173,7 +165,6 @@ export default function WriteWordGamePage({ params }: WriteWordGamePageProps) {
   const checkWord = async (assembledWord: string) => {
     // Защита от множественных вызовов
     if (showSuccess) {
-      console.log('Already checking word, skipping...');
       return;
     }
     
@@ -232,7 +223,6 @@ export default function WriteWordGamePage({ params }: WriteWordGamePageProps) {
   const moveToNextWord = async () => {
     // Дополнительная защита от множественных вызовов
     if (hasSaved.current) {
-      console.log('Already saved, skipping...');
       return;
     }
     
@@ -245,9 +235,6 @@ export default function WriteWordGamePage({ params }: WriteWordGamePageProps) {
       if (user?.id && !hasSaved.current) {
         hasSaved.current = true;
         await saveGameResult(user.id, 'ukrainian', 10, levelMistakes === 0)
-        console.log('!!! UKRAINIAN WRITE WORD COMPLETE: 10 XP SENT !!!');
-      } else {
-        console.log("Анонимный игрок, очки не шлем")
       }
       setShowLevelComplete(true)
     }

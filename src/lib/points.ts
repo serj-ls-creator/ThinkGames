@@ -4,8 +4,6 @@ export const POINTS_PER_LEVEL = 500;
 
 export const updateUserXP = async (userId: string, category: 'math' | 'ukrainian' | 'dutch', amount: number) => {
   try {
-    console.log(`DEBUG: updateUserXP called with userId=${userId}, category=${category}, amount=${amount}`);
-    
     // 1. Получаем текущий SCORE (не xp!)
     const { data: currentData, error: fetchError } = await supabase
       .from('game_progress')
@@ -14,13 +12,13 @@ export const updateUserXP = async (userId: string, category: 'math' | 'ukrainian
       .eq('category', category)
       .maybeSingle(); // Используем maybeSingle чтобы не было ошибки если записи нет
 
-    console.log(`DEBUG: fetchError=${fetchError}, currentData=${JSON.stringify(currentData)}`);
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      throw fetchError;
+    }
 
     // 2. Рассчитываем новое значение, страхуясь от undefined
     const currentScore = currentData?.score || 0;
     const newScore = currentScore + amount;
-
-    console.log(`DEBUG: Updating ${category} for ${userId}. Old: ${currentScore}, New: ${newScore}`);
 
     // 3. Сохраняем обратно в колонку score
     const { data, error } = await supabase
@@ -28,13 +26,9 @@ export const updateUserXP = async (userId: string, category: 'math' | 'ukrainian
       .upsert({
         user_id: userId,
         category,
-        score: newScore 
-      }, {
-        onConflict: 'user_id,category'
+        score: newScore
       })
       .select();
-
-    console.log(`DEBUG: upsert result - error=${error}, data=${JSON.stringify(data)}`);
 
     if (error) throw error;
     return { success: true, data };
@@ -47,15 +41,11 @@ export const updateUserXP = async (userId: string, category: 'math' | 'ukrainian
 // Функция получения статистики пользователя напрямую из game_progress
 export const getUserStats = async (userId: string) => {
   try {
-    console.log('DEBUG: getUserStats called for userId:', userId);
-    
     // Прямой запрос к таблице game_progress вместо View
     const { data, error } = await supabase
       .from('game_progress')
       .select('category, score')
       .eq('user_id', userId);
-
-    console.log('Структура таблицы game_progress:', data);
 
     if (error) {
       console.error('Error fetching user stats from game_progress:', error);
@@ -64,7 +54,6 @@ export const getUserStats = async (userId: string) => {
 
     // Если данных нет, возвращаем значения по умолчанию
     if (!data || data.length === 0) {
-      console.log('No data found for user, returning defaults');
       return { 
         success: true, 
         data: {
@@ -100,8 +89,6 @@ export const getUserStats = async (userId: string) => {
           break;
       }
     });
-
-    console.log('Calculated stats:', { math_xp, ukrainian_xp, dutch_xp, total_xp });
 
     return { 
       success: true, 
@@ -143,22 +130,16 @@ export const addXPWithBonus = async (userId: string, category: 'math' | 'ukraini
 
 // Сохранение результата игры (поддерживает анонимных пользователей)
 export const saveGameResult = async (userId: string | null, category: 'math' | 'ukrainian' | 'dutch', amount: number, isCleanGame: boolean = false) => {
-  console.log('DEBUG: Attempting to save score...', { userId, category, amount, isCleanGame });
-  
   if (!userId) {
-    console.log("DEBUG: Game completed anonymously, no score saved");
     return { success: true, data: null }; // Возвращаем успех чтобы не ломать логику игры
   }
   
   // По правилам всегда сохраняем только amount, без бонусов за чистую игру
   const totalAmount = amount;
-  console.log('DEBUG: Final amount to save:', totalAmount);
   
   const result = await updateUserXP(userId, category, totalAmount);
   
-  if (result.success) {
-    console.log('DEBUG: Save successful!', result.data);
-  } else {
+  if (!result.success) {
     console.error('SUPABASE ERROR:', result.error);
     if (result.error && typeof result.error === 'object') {
       console.error('Error details:', (result.error as any).message, (result.error as any).details, (result.error as any).hint);

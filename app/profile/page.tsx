@@ -57,9 +57,7 @@ export default function ProfilePage() {
     if (!user?.id) return
 
     const loadUserStats = async () => {
-      console.log('Загружаем статистику для юзера:', user.id)
       const { success, data } = await getUserStats(user.id)
-      console.log('Полученные данные статистики:', data)
       if (success && data) {
         setStats(data) // Сохраняем сырые данные
         setUserStats({
@@ -78,9 +76,7 @@ export default function ProfilePage() {
     if (!user?.id) return
     
     const updateProgress = async () => {
-      console.log('Обновляем прогресс для юзера:', user.id)
       const { success, data } = await getUserStats(user.id)
-      console.log('Обновленные данные:', data)
       if (success && data) {
         setStats(data) // Обновляем сырые данные
         setUserStats({
@@ -106,7 +102,6 @@ export default function ProfilePage() {
     const level = Math.floor(totalXP / 500) + 1
     const progress = (totalXP % 500) / 500 * 100
     
-    console.log('Расчет глобального уровня:', { totalXP, level, progress })
     return { level, progress }
   }, [stats])
 

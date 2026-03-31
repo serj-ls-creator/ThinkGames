@@ -50,9 +50,7 @@ export default function Home() {
       }
 
       // Загрузка статистики
-      console.log('Главная: загружаем статистику для юзера:', user.id)
       const { success: statsSuccess, data: statsData } = await getUserStats(user.id)
-      console.log('Главная: полученные данные статистики:', statsData)
       if (statsSuccess && statsData) {
         setStats(statsData) // Сохраняем сырые данные
         setUserStats({
@@ -72,9 +70,7 @@ export default function Home() {
     if (!user?.id) return
     
     const updateProgress = async () => {
-      console.log('Главная: обновляем прогресс для юзера:', user.id)
       const { success, data } = await getUserStats(user.id)
-      console.log('Главная: обновленные данные:', data)
       if (success && data) {
         setStats(data) // Обновляем сырые данные
         setUserStats({

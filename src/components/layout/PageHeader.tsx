@@ -39,9 +39,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
     if (!user?.id) return
 
     const loadStats = async () => {
-      console.log('PageHeader: загружаем статистику для юзера:', user.id)
       const { success, data } = await getUserStats(user.id)
-      console.log('PageHeader: полученные данные:', data)
       if (success && data) {
         setStats(data)
         setUserStats({
@@ -60,9 +58,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
     if (!user?.id) return
     
     const updateProgress = async () => {
-      console.log('PageHeader: обновляем прогресс для юзера:', user.id)
       const { success, data } = await getUserStats(user.id)
-      console.log('PageHeader: обновленные данные:', data)
       if (success && data) {
         setStats(data)
         setUserStats({

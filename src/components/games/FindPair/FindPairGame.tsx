@@ -49,9 +49,6 @@ export const FindPairGame: React.FC = () => {
     try {
       if (user?.id) {
         await saveGameResult(user.id, 'math', 10, false) // Фиксированные 10 очков
-        console.log('!!! FIND PAIR GAME COMPLETE: 10 XP SENT !!!');
-      } else {
-        console.log('Анонимный игрок: очки не сохранены')
       }
     } catch (error) {
       console.error('Failed to save game progress:', error)

@@ -75,7 +75,6 @@ export const BalloonSweeperGame: React.FC<BalloonSweeperGameProps> = ({ difficul
     if (status === 'won' && !hasSaved.current && user?.id) {
       hasSaved.current = true;
       saveGameResult(user.id, 'math', 10, false);
-      console.log('!!! BALLOON SWEEPER COMPLETE: 10 XP SENT !!!');
     }
   }, [status, user?.id]);
 

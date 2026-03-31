@@ -16,13 +16,11 @@ const isMobile = () => {
 const speak = (text: string, lang: 'nl-NL' | 'uk-UA') => {
   // Озвучка только на мобильных устройствах
   if (!isMobile()) {
-    console.log('Desktop detected - speech synthesis disabled');
     return;
   }
   
   // Проверка доступности Speech Synthesis
   if (typeof window === 'undefined' || !window.speechSynthesis) {
-    console.log('Speech synthesis not available');
     return;
   }
   
@@ -33,42 +31,32 @@ const speak = (text: string, lang: 'nl-NL' | 'uk-UA') => {
     const voices = synth.getVoices();
     const utterance = new SpeechSynthesisUtterance(text);
     
-    console.log(`Available voices for ${lang}:`, voices.map(v => ({ name: v.name, lang: v.lang })));
-    
     // Ищем голос максимально точно
     const targetVoice = voices.find(v => 
-      v.lang.replace('_', '-').toLowerCase() === lang.toLowerCase() ||
-      v.lang.toLowerCase().startsWith(lang.split('-')[0])
+      v.lang.toLowerCase().includes(lang.toLowerCase())
     );
 
     if (targetVoice) {
       utterance.voice = targetVoice;
-      console.log(`Using ${lang} voice:`, targetVoice.name);
     } else {
       // Fallback для нидерландского - ищем английский голос
       if (lang === 'nl-NL') {
         const englishVoice = voices.find(v => 
-          v.lang.toLowerCase().startsWith('en')
+          v.lang.toLowerCase().includes('en')
         );
         if (englishVoice) {
           utterance.voice = englishVoice;
-          console.log('Using English voice for Dutch text:', englishVoice.name);
-        } else {
-          console.log('No English voice found for Dutch text');
         }
       } else if (lang === 'uk-UA') {
         // Fallback для украинского - ищем любой славянский голос
         const fallbackVoice = voices.find(v => 
-          v.lang.toLowerCase().includes('uk') ||
-          v.lang.toLowerCase().includes('ru') ||
+          v.lang.toLowerCase().includes('ru') || 
           v.lang.toLowerCase().includes('pl') ||
+          v.lang.toLowerCase().includes('bg') ||
           v.lang.toLowerCase().includes('cs')
         );
         if (fallbackVoice) {
           utterance.voice = fallbackVoice;
-          console.log('Using fallback Slavic voice for Ukrainian:', fallbackVoice.name, 'lang:', fallbackVoice.lang);
-        } else {
-          console.log('No Slavic voice found for Ukrainian text');
         }
       }
     }
@@ -110,7 +98,6 @@ interface CardState {
 
 export const ConnectPairsGame: React.FC<ConnectPairsGameProps> = ({ items, title, category }) => {
   const { user } = useAuth()
-  console.log('DEBUG: ConnectPairsGame user:', user, 'category:', category)
   const [cards, setCards] = useState<CardState[]>([])
   const [selectedLeft, setSelectedLeft] = useState<string | null>(null)
   const [matchedPairs, setMatchedPairs] = useState(0)
@@ -145,7 +132,6 @@ export const ConnectPairsGame: React.FC<ConnectPairsGameProps> = ({ items, title
       
       const handleCompletion = async () => {
         try {
-          console.log('!!! CONNECT PAIRS GAME COMPLETE: Sending 10 XP !!!');
           await saveGameResult(user.id, category, 10, mistakes === 0);
         } catch (error) {
           console.error('Error in handleCompletion:', error);
