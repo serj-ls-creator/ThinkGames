@@ -4,6 +4,8 @@ export const POINTS_PER_LEVEL = 500;
 
 export const updateUserXP = async (userId: string, category: 'math' | 'ukrainian' | 'dutch', amount: number) => {
   try {
+    console.log('updateUserXP called:', { userId, category, amount });
+    
     // 1. Получаем текущий SCORE (не xp!)
     const { data: currentData, error: fetchError } = await supabase
       .from('game_progress')
@@ -19,19 +21,38 @@ export const updateUserXP = async (userId: string, category: 'math' | 'ukrainian
     // 2. Рассчитываем новое значение, страхуясь от undefined
     const currentScore = currentData?.score || 0;
     const newScore = currentScore + amount;
+    
+    console.log('Score calculation:', { currentScore, amount, newScore });
 
-    // 3. Сохраняем обратно в колонку score
-    const { data, error } = await supabase
+    // 3. Сначала пробуем обновить существующую запись
+    const { data: updateData, error: updateError } = await supabase
       .from('game_progress')
-      .upsert({
-        user_id: userId,
-        category,
-        score: newScore
-      })
+      .update({ score: newScore })
+      .eq('user_id', userId)
+      .eq('category', category)
       .select();
 
-    if (error) throw error;
-    return { success: true, data };
+    if (updateError) {
+      console.log('Update failed, trying insert:', updateError);
+      
+      // 4. Если обновление не удалось (записи нет), вставляем новую
+      const { data: insertData, error: insertError } = await supabase
+        .from('game_progress')
+        .insert({
+          user_id: userId,
+          category,
+          score: newScore
+        })
+        .select();
+
+      console.log('Insert result:', { data: insertData, error: insertError });
+
+      if (insertError) throw insertError;
+      return { success: true, data: insertData };
+    } else {
+      console.log('Update successful:', updateData);
+      return { success: true, data: updateData };
+    }
   } catch (error) {
     console.error('CRITICAL ERROR in updateUserXP:', error);
     return { success: false, error };
@@ -130,14 +151,19 @@ export const addXPWithBonus = async (userId: string, category: 'math' | 'ukraini
 
 // Сохранение результата игры (поддерживает анонимных пользователей)
 export const saveGameResult = async (userId: string | null, category: 'math' | 'ukrainian' | 'dutch', amount: number, isCleanGame: boolean = false) => {
+  console.log('saveGameResult called:', { userId, category, amount, isCleanGame });
+  
   if (!userId) {
+    console.log("No userId provided, returning success");
     return { success: true, data: null }; // Возвращаем успех чтобы не ломать логику игры
   }
   
   // По правилам всегда сохраняем только amount, без бонусов за чистую игру
   const totalAmount = amount;
+  console.log('Final amount to save:', totalAmount);
   
   const result = await updateUserXP(userId, category, totalAmount);
+  console.log('saveGameResult result:', result);
   
   if (!result.success) {
     console.error('SUPABASE ERROR:', result.error);
