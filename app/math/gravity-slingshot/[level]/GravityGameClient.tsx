@@ -102,16 +102,8 @@ export default function GravityGameClient({ level }: { level: number }) {
 
   // Сохранение очков при победе
   useEffect(() => {
-    console.log('Gravity game status check:', { 
-      status: gameState.status, 
-      hasSaved: hasSaved.current, 
-      userId: user?.id,
-      userEmail: user?.email
-    });
-    
     if (gameState.status === 'won' && !hasSaved.current && user?.id) {
       hasSaved.current = true
-      console.log('Attempting to save 10 points for gravity game...');
       saveGameResult(user.id, 'math', 10, false)
     }
   }, [gameState.status, user?.id])

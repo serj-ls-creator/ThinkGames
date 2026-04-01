@@ -8,17 +8,41 @@ import { GRAVITY_LEVELS_DATA } from '../../../src/data/gravityGameLevels'
 export default function GravitySlingshotPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#EEE9FF] via-[#F5F0FF] to-[#FAF5FF]">
-      <Header title="Орбітальна Арифметика" />
-      
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto px-4 pt-4">
+        {/* Кнопка "Назад до математики" над заголовком в Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
+          className="mb-4 text-left"
+        >
+          <Link
+            href="/math"
+            className="inline-flex items-center px-6 py-3 bg-gray-500 text-white rounded-2xl hover:bg-gray-600 transition-colors"
+          >
+            ← Назад до математики
+          </Link>
+        </motion.div>
+        
+        {/* Header с заголовком */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
           className="text-center mb-8"
         >
-          <h1 className="text-3xl font-bold text-gray-800 mb-4">
+          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent mb-4">
             Орбітальна Арифметика
           </h1>
+        </motion.div>
+      </div>
+      
+      <div className="max-w-4xl mx-auto px-4 pb-8">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="text-center mb-8"
+        >
           <p className="text-lg text-gray-600 mb-8">
             Оберіть рівень та запустіть гру!
           </p>
@@ -54,20 +78,6 @@ export default function GravitySlingshotPage() {
               </motion.div>
             </Link>
           ))}
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="mt-8 text-center"
-        >
-          <Link
-            href="/math"
-            className="inline-flex items-center px-6 py-3 bg-gray-500 text-white rounded-2xl hover:bg-gray-600 transition-colors"
-          >
-            ← Назад до математики
-          </Link>
         </motion.div>
       </div>
     </div>
