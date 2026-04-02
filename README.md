@@ -1,109 +1,142 @@
 # ThinkGames
 
-ThinkGames — образовательная игровая платформа для детей, в которой изучение математики, нидерландского и украинского языков построено через короткие интерактивные игры.
+ThinkGames — образовательная игровая платформа для детей, где математика, нидерландский и украинский язык изучаются через короткие интерактивные игры.
 
 ## Что есть в проекте
 
 - главная страница с карточками разделов
-- общий прогресс по XP
-- `Щоденний виклик` с начислением звезд
-- `Leaderboard` с рейтингом пользователей
-- профиль пользователя с именем и аватаром
+- общий XP и уровни
+- `Щоденний виклик` со звёздами
+- ежедневные сообщения-головоломки в колокольчике
+- `Leaderboard`
+- профиль пользователя
+- единая страница `/games` со всеми играми
 - хранение данных в Supabase
 
 ## Основные механики
 
-### XP
+### XP и уровни
 
-- каждая завершенная игра дает `10 XP`
+- каждая завершённая игра даёт `10 XP`
 - XP хранится в `game_progress`
-- категории:
+- категории прогресса:
   - `math`
-  - `ukrainian`
   - `dutch`
-- 1 уровень = `500 XP`
+  - `ukrainian`
+- `500 XP = 1 уровень`
 
 ### Щоденний виклик
 
-- если пользователь проходит хотя бы 1 игру за день, день засчитывается
-- за 5 дней подряд начисляется `1 звезда`
-- состояние хранится в `daily_challenge_progress`
-- звезды отображаются в верхней части главной страницы
+- день засчитывается, если пользователь прошёл хотя бы 1 игру за день
+- за каждые 5 дней подряд начисляется `1 звезда`
+- прогресс хранится в `daily_challenge_progress`
+- звёзды показываются в верхней части главной страницы
+
+### Daily messages
+
+- в колокольчике на главной показывается одно сообщение в день
+- сообщения идут по порядку из отдельного списка
+- после просмотра сообщение считается прочитанным, и красная точка исчезает
 
 ### Leaderboard
 
-- отдельный маршрут: `/leaderboard`
+- маршрут: `/leaderboard`
 - показывает:
   - аватар
   - имя
   - общий XP
   - уровень
   - прогресс внутри уровня
-  - количество звезд
-- рейтинг строится по:
-  1. количеству звезд
-  2. общему XP
+  - количество звёзд
+- сортировка идёт по звёздам, затем по XP
 
-## Технологический стек
+## Игры
 
-- Next.js 14 App Router
-- TypeScript
-- Tailwind CSS
-- Framer Motion
-- Zustand
-- Supabase
+### Математика
+
+- `Знайди пару`
+- `З'єднай пару`
+- `Ваги рівноваги`
+- `Кульковий сапер`
+- `Орбітальна арифметика`
+
+### Нидерландский
+
+- `З'єднай слова`
+- `Вгадай слово`
+
+### Украинский
+
+- `Напиши слово`
+
+## Озвучка
+
+- используется общий helper `src/lib/speech.ts`
+- поддерживаются только правильные языки озвучки
+- русский язык исключён из fallback
+- `Math Connect Pairs` и `Dutch Connect Pairs`:
+  - левая колонка — нидерландская
+  - правая колонка — украинская
+- `Українська -> Напиши слово` озвучивает слово на украинском
+
+## Орбітальна арифметика
+
+- реализована на `app/math/gravity-slingshot/[level]/GravityGameClient.tsx`
+- использует Web Audio API для игровых звуков
+- есть кнопка включения и отключения звука
+- поле адаптируется под телефон
+- уровень пересоздаётся под реальный размер `canvas`
+
+## Важные файлы
+
+### Маршруты и UI
+
+- `app/page.tsx` — главная
+- `app/games/page.tsx` — все игры на одной странице
+- `app/leaderboard/page.tsx` — leaderboard
+- `src/components/layout/BottomNav.tsx` — нижняя навигация
+- `src/components/GameEndModal.tsx` — завершение игр
+
+### Прогресс и данные
+
+- `src/lib/points.ts` — сохранение XP и вызов daily challenge
+- `src/lib/dailyChallenge.ts` — логика ежедневного вызова
+- `src/lib/dailyMessages.ts` — сообщение дня и статус прочтения
+- `src/lib/leaderboard.ts` — загрузка рейтинга
+- `src/lib/profile-db.ts` — профиль пользователя
+- `src/lib/supabase.ts` — Supabase client
+
+### Игровая логика
+
+- `src/components/games/BalanceScale/BalanceScaleGame.tsx`
+- `src/lib/balanceScale.ts`
+- `src/lib/gravityGame.ts`
+- `components/MathConnectPairsGame.tsx`
+- `components/DutchConnectPairsGame.tsx`
 
 ## Структура проекта
 
 ```text
 ThinkGames/
 ├── app/
-│   ├── page.tsx
-│   ├── leaderboard/page.tsx
-│   ├── login/page.tsx
-│   ├── profile/page.tsx
-│   ├── math/
-│   ├── dutch/
-│   └── ukrainian/
+├── components/
+├── public/
 ├── src/
 │   ├── components/
 │   ├── constants/
 │   ├── context/
+│   ├── data/
 │   ├── lib/
+│   ├── store/
 │   └── types/
-├── components/
-├── data/
-├── public/
 ├── database-setup.sql
 ├── daily-challenge-setup.sql
 ├── leaderboard-setup.sql
-├── struktutra.md
+├── README.md
 ├── status.md
+├── struktutra.md
 └── promt_games.md
 ```
-
-## Важные файлы
-
-### Frontend
-
-- `app/page.tsx` — главная страница
-- `app/leaderboard/page.tsx` — рейтинг пользователей
-- `src/components/layout/BottomNav.tsx` — нижнее меню
-- `src/components/GameEndModal.tsx` — общее модальное окно завершения игры
-
-### Data layer
-
-- `src/lib/points.ts` — сохранение XP
-- `src/lib/dailyChallenge.ts` — логика daily challenge
-- `src/lib/leaderboard.ts` — получение leaderboard
-- `src/lib/profile-db.ts` — профиль пользователя
-- `src/lib/supabase.ts` — Supabase client
-
-### SQL
-
-- `database-setup.sql` — profiles + trigger
-- `daily-challenge-setup.sql` — таблица `daily_challenge_progress`
-- `leaderboard-setup.sql` — view `leaderboard_stats`
 
 ## Быстрый старт
 
@@ -115,11 +148,9 @@ npm install
 
 ### 2. Переменные окружения
 
-Создайте `.env.local` на основе `.env.example`.
+Создайте `.env.local` и заполните Supabase-переменные проекта.
 
-Если в проекте используются переменные Supabase через env, заполните их своими значениями.
-
-## 3. Настройка Supabase
+### 3. Настройка Supabase
 
 Выполните SQL-файлы в таком порядке:
 
@@ -127,13 +158,13 @@ npm install
 2. `daily-challenge-setup.sql`
 3. `leaderboard-setup.sql`
 
-Это создаст:
+Это подготовит:
 
-- таблицу `profiles`
-- таблицу `daily_challenge_progress`
-- view `leaderboard_stats`
+- `profiles`
+- `daily_challenge_progress`
+- `leaderboard_stats`
 
-Примечание: таблица `game_progress` уже должна существовать и использоваться для XP.
+`game_progress` должен быть доступен для хранения XP.
 
 ### 4. Запуск
 
@@ -143,35 +174,18 @@ npm run dev
 
 Приложение будет доступно по адресу [http://localhost:3000](http://localhost:3000).
 
-## Разделы и игры
-
-### Математика
-
-- "Знайди пару"
-- "З'єднай пару"
-- "Ваги рівноваги"
-- "Кульковий сапер"
-
-### Нидерландский
-
-- "З'єднай слова"
-- DutchWordle
-
-### Украинский
-
-- "Напиши слово"
-
 ## Навигация
 
 - `/` — главная
+- `/games` — все игры
 - `/leaderboard` — рейтинг
 - `/profile` — профиль
 - `/login` — вход
-- `/math` — раздел математики
-- `/dutch` — раздел нидерландского
-- `/ukrainian` — раздел украинского
+- `/math` — математика
+- `/dutch` — нидерландский
+- `/ukrainian` — украинский
 
-## Как добавлять новую игру
+## Правила для новых игр
 
 Новая игра должна:
 
@@ -179,35 +193,18 @@ npm run dev
 - сохранять результат через `saveGameResult(...)`
 - начислять фиксированные `10 XP`
 - не дублировать логику daily challenge
-- не делать отдельную систему leaderboard
+- не добавлять отдельный обходной механизм leaderboard
 
-Подробные правила находятся в [promt_games.md](/D:/app/_in_dev_windsurf/ThinkGames/promt_games.md).
+Подробные правила описаны в [promt_games.md](/D:/app/_in_dev_windsurf/ThinkGames/promt_games.md).
 
-## Состояние проекта
-
-Актуальные статусы и технические заметки:
+## Документация проекта
 
 - [status.md](/D:/app/_in_dev_windsurf/ThinkGames/status.md)
 - [struktutra.md](/D:/app/_in_dev_windsurf/ThinkGames/struktutra.md)
+- [promt_games.md](/D:/app/_in_dev_windsurf/ThinkGames/promt_games.md)
 
 ## Проверка
-
-Для проверки типов:
 
 ```bash
 npx tsc --noEmit
 ```
-
-## Деплой
-
-Рекомендуемый вариант — Vercel + Supabase.
-
-Для production нужно:
-
-- задать переменные окружения
-- подготовить таблицы и view в Supabase
-- проверить доступы RLS и `grant select` для leaderboard
-
-## Лицензия
-
-MIT
