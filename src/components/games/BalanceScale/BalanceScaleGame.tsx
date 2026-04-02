@@ -29,24 +29,30 @@ const getLevelLabel = (maxValue: number) =>
 const WeightBadge = ({
   value,
   large = false,
+  xLarge = false,
   active = false,
 }: {
   value: number
   large?: boolean
+  xLarge?: boolean
   active?: boolean
 }) => (
   <div
-    className={`relative inline-flex flex-col items-center ${large ? 'scale-95 sm:scale-100' : 'scale-90 sm:scale-100'}`}
+    className={`relative inline-flex flex-col items-center ${
+      xLarge ? 'scale-100' : large ? 'scale-95 sm:scale-100' : 'scale-90 sm:scale-100'
+    }`}
   >
     <div
-      className={`${large ? 'h-3 w-6' : 'h-2.5 w-5'} rounded-full border`}
+      className={`${xLarge ? 'h-4 w-8' : large ? 'h-3 w-6' : 'h-2.5 w-5'} rounded-full border`}
       style={{
         borderColor: active ? '#020617' : '#111827',
         backgroundColor: active ? '#020617' : '#111827',
       }}
     />
     <div
-      className={`-mt-1 rounded-[1rem] px-3 shadow-md ${large ? 'min-w-12 py-2 text-lg' : 'min-w-9 py-1 text-sm'}`}
+      className={`-mt-1 rounded-[1rem] px-3 shadow-md ${
+        xLarge ? 'min-w-[4.75rem] py-3 text-[2rem]' : large ? 'min-w-12 py-2 text-lg' : 'min-w-9 py-1 text-sm'
+      }`}
       style={{
         background: 'linear-gradient(180deg, #374151 0%, #111827 55%, #020617 100%)',
         boxShadow: '0 8px 18px rgba(15, 23, 42, 0.24)',
@@ -59,9 +65,14 @@ const WeightBadge = ({
 
 export const BalanceScaleGame: React.FC<BalanceScaleGameProps> = ({ maxValue }) => {
   const { user } = useAuth()
-  const [round, setRound] = useState(() => generateBalanceRound(maxValue))
+  const [round, setRound] = useState(() => ({
+    target: 0,
+    availableWeights: [] as BalanceWeight[],
+    solutionIds: [] as string[],
+  }))
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [showWinMessage, setShowWinMessage] = useState(false)
+  const [isRoundReady, setIsRoundReady] = useState(false)
   const hasSaved = useRef(false)
 
   const selectedWeights = useMemo(
@@ -83,6 +94,16 @@ export const BalanceScaleGame: React.FC<BalanceScaleGameProps> = ({ maxValue }) 
   const rightCupOffset = isBalanced ? 0 : difference > 0 ? -cupTravel : cupTravel
 
   useEffect(() => {
+    setRound(generateBalanceRound(maxValue))
+    setSelectedIds([])
+    setShowWinMessage(false)
+    setIsRoundReady(true)
+    hasSaved.current = false
+  }, [maxValue])
+
+  useEffect(() => {
+    if (!isRoundReady) return
+
     if (!isBalanced) {
       setShowWinMessage(false)
       return
@@ -93,7 +114,7 @@ export const BalanceScaleGame: React.FC<BalanceScaleGameProps> = ({ maxValue }) 
     }, 2000)
 
     return () => window.clearTimeout(timeoutId)
-  }, [isBalanced, round.target, selectedIds])
+  }, [isBalanced, isRoundReady, round.target, selectedIds])
 
   useEffect(() => {
     if (showWinMessage && !hasSaved.current && user?.id) {
@@ -153,6 +174,11 @@ export const BalanceScaleGame: React.FC<BalanceScaleGameProps> = ({ maxValue }) 
           transition={{ duration: 0.3, delay: 0.05 }}
           className="relative mb-3 rounded-[1.6rem] border border-slate-200 bg-white p-3 shadow-xl sm:p-4"
         >
+          {!isRoundReady ? (
+            <div className="flex min-h-[250px] items-center justify-center text-sm font-medium text-slate-500">
+              Завантаження раунду...
+            </div>
+          ) : (
           <div className="relative mx-auto aspect-[760/360] min-h-[250px] w-full max-w-3xl overflow-visible pt-5">
             <svg viewBox="0 0 760 330" className="block h-full w-full">
               <g transform={`translate(0 24) rotate(${beamAngle} 380 168)`}>
@@ -169,9 +195,9 @@ export const BalanceScaleGame: React.FC<BalanceScaleGameProps> = ({ maxValue }) 
                 />
                 <circle cx="205" cy="170" r="16" fill={SCALE_COLORS.cups} />
                 <circle cx="205" cy="170" r="8" fill={SCALE_COLORS.accent} />
-                <foreignObject x="153" y="15" width="104" height="70">
+                <foreignObject x="137" y="26" width="136" height="82">
                   <div className="flex h-full w-full items-end justify-center">
-                    <WeightBadge value={round.target} large={true} active={true} />
+                    <WeightBadge value={round.target} xLarge={true} active={true} />
                   </div>
                 </foreignObject>
               </g>
@@ -203,6 +229,7 @@ export const BalanceScaleGame: React.FC<BalanceScaleGameProps> = ({ maxValue }) 
               <rect x="308" y="304" width="144" height="10" rx="5" fill={SCALE_COLORS.baseBottom} />
             </svg>
           </div>
+          )}
 
           <GameEndModal
             isOpen={showWinMessage}

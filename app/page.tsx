@@ -3,18 +3,21 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { SectionCard } from '../src/components/layout/SectionCard'
 import { BottomNav } from '../src/components/layout/BottomNav'
+import { SectionCard } from '../src/components/layout/SectionCard'
 import { ProgressBar } from '../src/components/ui/ProgressBar'
 import { SECTIONS } from '../src/constants'
-import {
-  DAILY_CHALLENGE_GOAL_DAYS,
-  getDailyChallengeState
-} from '../src/lib/dailyChallenge'
-import { DEFAULT_PROFILE } from '../src/lib/profile'
-import { getLevelProgress, getUserStats } from '../src/lib/points'
-import { getUserProfile } from '../src/lib/profile-db'
 import { useAuth } from '../src/context/AuthContext'
+import { DAILY_CHALLENGE_GOAL_DAYS, getDailyChallengeState } from '../src/lib/dailyChallenge'
+import {
+  DailyMessage,
+  getTodayDailyMessage,
+  isDailyMessageRead,
+  markDailyMessageAsRead,
+} from '../src/lib/dailyMessages'
+import { DEFAULT_PROFILE } from '../src/lib/profile'
+import { getUserProfile } from '../src/lib/profile-db'
+import { getLevelProgress, getUserStats } from '../src/lib/points'
 
 type SubjectProgress = {
   currentLevel: number
@@ -32,32 +35,41 @@ const DEFAULT_SUBJECT_PROGRESS: SubjectProgress = {
   currentLevel: 1,
   xpInLevel: 0,
   xpToNextLevel: 500,
-  progressPercentage: 0
+  progressPercentage: 0,
 }
 
 export default function Home() {
   const { user } = useAuth()
   const [profile, setProfile] = useState({
     name: DEFAULT_PROFILE.name,
-    avatar: DEFAULT_PROFILE.avatar
+    avatar: DEFAULT_PROFILE.avatar,
   })
   const [userStats, setUserStats] = useState({
     math: DEFAULT_SUBJECT_PROGRESS,
     ukrainian: DEFAULT_SUBJECT_PROGRESS,
-    dutch: DEFAULT_SUBJECT_PROGRESS
+    dutch: DEFAULT_SUBJECT_PROGRESS,
   })
   const [stats, setStats] = useState<any>(null)
   const [dailyChallenge, setDailyChallenge] = useState<DailyChallengeViewState>({
     stars: 0,
-    daysInCycle: 0
+    daysInCycle: 0,
   })
+  const [dailyMessage, setDailyMessage] = useState<DailyMessage | null>(null)
+  const [isMessageRead, setIsMessageRead] = useState(true)
+  const [isMessageOpen, setIsMessageOpen] = useState(false)
   const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const todayMessage = getTodayDailyMessage()
+    setDailyMessage(todayMessage)
+    setIsMessageRead(isDailyMessageRead(todayMessage, user?.id))
+  }, [user?.id])
 
   useEffect(() => {
     if (!user?.id) {
       setDailyChallenge({
         stars: 0,
-        daysInCycle: 0
+        daysInCycle: 0,
       })
       setLoading(false)
       return
@@ -73,12 +85,12 @@ export default function Home() {
       if (profileSuccess && profileData) {
         setProfile({
           name: profileData.display_name || DEFAULT_PROFILE.name,
-          avatar: profileData.avatar_url || DEFAULT_PROFILE.avatar
+          avatar: profileData.avatar_url || DEFAULT_PROFILE.avatar,
         })
       } else {
         setProfile({
           name: user.email || DEFAULT_PROFILE.name,
-          avatar: DEFAULT_PROFILE.avatar
+          avatar: DEFAULT_PROFILE.avatar,
         })
       }
 
@@ -88,20 +100,24 @@ export default function Home() {
         setUserStats({
           math: getLevelProgress(statsData.math_xp || 0),
           ukrainian: getLevelProgress(statsData.ukrainian_xp || 0),
-          dutch: getLevelProgress(statsData.dutch_xp || 0)
+          dutch: getLevelProgress(statsData.dutch_xp || 0),
         })
       }
 
       setLoading(false)
     }
 
-    loadData()
+    void loadData()
   }, [user?.email, user?.id])
 
   useEffect(() => {
-    if (!user?.id) return
-
     const updateProgress = async () => {
+      const todayMessage = getTodayDailyMessage()
+      setDailyMessage(todayMessage)
+      setIsMessageRead(isDailyMessageRead(todayMessage, user?.id))
+
+      if (!user?.id) return
+
       const { success: challengeSuccess, data: challengeData } = await getDailyChallengeState(user.id)
       if (challengeSuccess && challengeData) {
         setDailyChallenge(challengeData)
@@ -113,7 +129,7 @@ export default function Home() {
         setUserStats({
           math: getLevelProgress(data.math_xp || 0),
           ukrainian: getLevelProgress(data.ukrainian_xp || 0),
-          dutch: getLevelProgress(data.dutch_xp || 0)
+          dutch: getLevelProgress(data.dutch_xp || 0),
         })
       }
     }
@@ -124,6 +140,14 @@ export default function Home() {
       window.removeEventListener('focus', updateProgress)
     }
   }, [user?.id])
+
+  const handleOpenMessage = () => {
+    if (!dailyMessage) return
+
+    markDailyMessageAsRead(dailyMessage, user?.id)
+    setIsMessageRead(true)
+    setIsMessageOpen(true)
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#EEE9FF] via-[#F5F0FF] to-[#FAF5FF]">
@@ -147,12 +171,17 @@ export default function Home() {
               <span className="text-sm font-bold text-gray-800">{dailyChallenge.stars}</span>
             </div>
 
-            <div className="relative">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200">
-                <span className="text-xs">🔔</span>
-              </div>
-              <div className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-red-500"></div>
-            </div>
+            <button
+              type="button"
+              onClick={handleOpenMessage}
+              className="relative flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-lg shadow-sm transition-transform hover:scale-105"
+              aria-label="Відкрити повідомлення дня"
+            >
+              <span>🔔</span>
+              {!isMessageRead && (
+                <span className="absolute -right-0.5 -top-0.5 h-3.5 w-3.5 rounded-full border-2 border-white bg-red-500" />
+              )}
+            </button>
           </div>
 
           <h1 className="mb-2 text-2xl font-bold text-gray-800">
@@ -231,7 +260,7 @@ export default function Home() {
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{
-                      width: `${(dailyChallenge.daysInCycle / DAILY_CHALLENGE_GOAL_DAYS) * 100}%`
+                      width: `${(dailyChallenge.daysInCycle / DAILY_CHALLENGE_GOAL_DAYS) * 100}%`,
                     }}
                     transition={{ duration: 1, delay: 0.8 }}
                     className="h-full bg-white"
@@ -246,6 +275,42 @@ export default function Home() {
           </div>
         </motion.div>
       </div>
+
+      {isMessageOpen && dailyMessage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4">
+          <div className="w-full max-w-sm rounded-[1.75rem] bg-white p-6 shadow-2xl">
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-wide text-purple-600">
+                  Повідомлення дня
+                </p>
+                <h2 className="mt-1 text-xl font-bold text-slate-900">Маленька головоломка</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsMessageOpen(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-lg text-slate-700 transition-colors hover:bg-slate-200"
+                aria-label="Закрити повідомлення"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="rounded-2xl bg-gradient-to-br from-amber-50 via-white to-orange-50 p-4 text-left shadow-inner">
+              <div className="mb-3 text-3xl">🧩</div>
+              <p className="text-base font-medium leading-7 text-slate-800">{dailyMessage.text}</p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsMessageOpen(false)}
+              className="mt-5 w-full rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg transition-transform hover:scale-[1.01]"
+            >
+              Зрозуміло
+            </button>
+          </div>
+        </div>
+      )}
 
       <BottomNav />
     </div>
