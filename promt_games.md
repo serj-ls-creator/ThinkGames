@@ -1,317 +1,176 @@
 # Правила разработки игр ThinkGames
 
-## 🎯 Основная концепция
+## Основной принцип
 
-**Каждая игра должна использовать универсальное модальное окно GameEndModal в конце игры и начислять ровно 10 очков за завершенный уровень/игру.** Никаких сложных формул, множителей или бонусов.
+Каждая новая игра в ThinkGames должна:
 
-## 📋 Обязательные правила для всех игр
+- использовать общий `GameEndModal`
+- начислять фиксированные `10 XP` за успешное завершение
+- сохранять результат через `saveGameResult(...)`
+- автоматически участвовать в daily challenge и leaderboard через общую систему сохранения
 
-### ✅ Что делать:
-- **GameEndModal** для завершения игры (обязательно!)
-- **10 очков** за завершенный уровень/игру
-- **Единоразово** - только один раз за игру
-- **Фиксированное значение** - никаких расчетов
-- **useRef для защиты** - `hasSaved.current = false` по умолчанию
-- **useEffect для сохранения** - при победе/завершении
+Нельзя делать отдельную систему очков или отдельную механику наград для каждой игры.
 
-### ❌ Что НЕ делать:
-- **Никаких кастомных модальных окон** - только GameEndModal
-- **Никаких формул** расчета очков
-- **Никаких множителей** за скорость/точность
-- **Никаких бонусов** за чистую игру
-- **Никаких очков** за отдельные действия/ответы
-- **Никаких calculateScore** функций
-- **Никаких сложных игр с canvas** - только простые карточные/логические игры
+## Обязательные правила
 
-## 🎮 Универсальное модальное окно GameEndModal
+### Что нужно делать
 
-### Обязательные пропсы для всех игр:
-```typescript
-<GameEndModal
-  isOpen={gameCompleted}           // Открыто ли модальное окно
-  isWon={true}                     // Победа или поражение
-  onPlayAgain={resetGame}          // Повторить игру
-  onSelectLevel={handleSelectLevel} // К выбору уровней
-  onMainMenu={handleMainMenu}      // В главное меню
-  title="Чудово!"                 // Заголовок
-  winMessage="Гру завершено!"      // Сообщение о победе
-  playAgainText="Грати знову"      // Текст кнопки повтора
-  mainMenuText="В головне меню"    // Текст кнопки меню
-  hasLevels={true}                 // Есть ли уровни
-  levelSelectHref="/path/to/levels" // Ссылка на уровни
-  showCurrentLevel={false}         // Показывать ли текущий уровень
-/>
-```
+- Использовать `saveGameResult(user.id, category, 10, false)` после успешного завершения игры
+- Защищать сохранение от повторного вызова через `useRef`
+- Показывать `GameEndModal` при завершении игры
+- Передавать корректную категорию:
+  - `math`
+  - `ukrainian`
+  - `dutch`
+- Сбрасывать флаг сохранения при рестарте игры
 
-### Правильные ссылки для разных игр:
-- **Математика**: `levelSelectHref="/math/[game]"`, `onMainMenu={() => window.location.href = '/math'}`
-- **Нидерландская**: `levelSelectHref="/dutch/[game]"`, `onMainMenu={() => window.location.href = '/dutch'}`
-- **Украинская**: `levelSelectHref="/ukrainian/[game]"`, `onMainMenu={() => window.location.href = '/ukrainian'}`
+### Чего делать не нужно
 
-## 🔧 Шаблон кода для новой игры
+- Не считать XP по формулам
+- Не добавлять случайные бонусы
+- Не начислять XP за отдельные шаги, клики или ответы
+- Не делать отдельные модалки завершения, если подходит `GameEndModal`
+- Не дублировать логику daily challenge внутри самой игры
+- Не писать отдельную логику leaderboard в каждой игре
 
-```typescript
+## Как работает прогресс
+
+### XP
+
+- Каждая успешно завершенная игра дает `10 XP`
+- XP сохраняется в `game_progress`
+- Общий уровень считается от общего XP
+- Один уровень = `500 XP`
+
+### Щоденний виклик
+
+- Daily challenge обновляется автоматически внутри `saveGameResult(...)`
+- Если пользователь прошел хотя бы 1 игру за день, день засчитывается
+- За 5 дней подряд начисляется 1 звезда
+- Звезды и серия дней сохраняются в `daily_challenge_progress`
+
+### Leaderboard
+
+- Leaderboard берёт данные из `leaderboard_stats`
+- Основа рейтинга:
+  - сначала количество звезд
+  - потом общий XP
+
+## Базовый шаблон новой игры
+
+```tsx
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { saveGameResult } from '../src/lib/points'
-import { useAuth } from '../src/context/AuthContext'
+import { useEffect, useRef, useState } from 'react'
 import GameEndModal from '../src/components/GameEndModal'
+import { useAuth } from '../src/context/AuthContext'
+import { saveGameResult } from '../src/lib/points'
 
-export default function NewGameComponent() {
-  const [gameStatus, setGameStatus] = useState<'playing' | 'won' | 'lost'>('playing')
+export default function NewGame() {
   const { user } = useAuth()
   const hasSaved = useRef(false)
+  const [isWon, setIsWon] = useState(false)
+  const [isFinished, setIsFinished] = useState(false)
 
-  // Сохранение очков при победе
   useEffect(() => {
-    if (gameStatus === 'won' && !hasSaved.current && user?.id) {
-      hasSaved.current = true;
-      saveGameResult(user.id, 'math' | 'ukrainian' | 'dutch', 10, false);
-      console.log('!!! NEW GAME COMPLETE: 10 XP SENT !!!');
+    if (isWon && isFinished && user?.id && !hasSaved.current) {
+      hasSaved.current = true
+      saveGameResult(user.id, 'math', 10, false)
     }
-  }, [gameStatus, user?.id]);
+  }, [isWon, isFinished, user?.id])
 
-  // Сброс при новой игре
   const resetGame = () => {
-    setGameStatus('playing');
-    hasSaved.current = false;
-    // ... сброс остальных состояний
-  };
-
-  const handleSelectLevel = () => {
-    window.location.href = '/[category]/[game]/levels';
-  };
-
-  const handleMainMenu = () => {
-    window.location.href = '/[category]';
-  };
+    hasSaved.current = false
+    setIsWon(false)
+    setIsFinished(false)
+  }
 
   return (
-    <div>
-      {/* ... игровой интерфейс */}
-      
-      {/* Универсальное модальное окно */}
+    <>
       <GameEndModal
-        isOpen={gameStatus === 'won' || gameStatus === 'lost'}
-        isWon={gameStatus === 'won'}
+        isOpen={isFinished}
+        isWon={isWon}
         onPlayAgain={resetGame}
-        onSelectLevel={handleSelectLevel}
-        onMainMenu={handleMainMenu}
-        title={gameStatus === 'won' ? 'Чудово!' : 'Гра закінчена'}
+        onSelectLevel={() => window.location.href = '/math'}
+        onMainMenu={() => window.location.href = '/'}
+        title={isWon ? 'Чудово!' : 'Спробуй ще раз'}
         winMessage="Гру завершено!"
-        loseMessage="Спробуйте ще раз!"
+        loseMessage="Спробуй ще раз!"
         playAgainText="Грати знову"
         mainMenuText="В головне меню"
         hasLevels={true}
-        levelSelectHref="/[category]/[game]/levels"
+        levelSelectHref="/math"
         showCurrentLevel={false}
       />
-    </div>
+    </>
   )
 }
 ```
 
-## 🎮 Примеры правильных реализаций
+## Паттерн сохранения
 
-### 1. ConnectPairsGame (З'єднай пару/слова)
-```typescript
-// Сохранение очков
+Правильный вариант:
+
+```tsx
+const hasSaved = useRef(false)
+
 useEffect(() => {
-  if (matchedPairs === items.length && matchedPairs > 0 && user?.id && !hasSavedResult.current) {
-    hasSavedResult.current = true;
-    saveGameResult(user.id, category, 10, false);
+  if (gameCompleted && user?.id && !hasSaved.current) {
+    hasSaved.current = true
+    saveGameResult(user.id, 'math', 10, false)
   }
-}, [matchedPairs, items.length]);
-
-// Модальное окно
-<GameEndModal
-  isOpen={matchedPairs === items.length}
-  isWon={true}
-  onPlayAgain={initializeGame}
-  onSelectLevel={() => router.push('/[category]/[game]')}
-  onMainMenu={() => router.push('/[category]')}
-  title="Чудово!"
-  winMessage="Гру завершено!"
-  playAgainText="Ще раз"
-  mainMenuText="В головне меню"
-  hasLevels={true}
-  levelSelectHref="/[category]/[game]"
-  showCurrentLevel={false}
-/>
+}, [gameCompleted, user?.id])
 ```
 
-### 2. BalloonSweeperGame (Кульковий сапер)
-```typescript
-// Сохранение очков
+Неправильный вариант:
+
+```tsx
 useEffect(() => {
-  if (status === 'won' && !hasSaved.current && user?.id) {
-    hasSaved.current = true;
-    saveGameResult(user.id, 'math', 10, false);
+  if (user?.id) {
+    saveGameResult(user.id, 'math', 10, false)
   }
-}, [status, user?.id]);
-
-// Модальное окно
-<GameEndModal
-  isOpen={status === 'won' || status === 'lost'}
-  isWon={status === 'won'}
-  onPlayAgain={resetGame}
-  onSelectLevel={() => window.location.href = '/math/balloon-sweeper'}
-  onMainMenu={() => window.location.href = '/math'}
-  title={status === 'won' ? 'Чудово!' : 'Гра закінчена'}
-  winMessage="Ура, поле очищено!"
-  loseMessage="Кулька луснула!"
-  playAgainText="Почати знову"
-  mainMenuText="В головне меню"
-  hasLevels={true}
-  levelSelectHref="/math/balloon-sweeper"
-  showCurrentLevel={false}
-/>
+}, [user?.id])
 ```
 
-### 3. Ukrainian Write Word (Напиши слово)
-```typescript
-// Сохранение очков
-useEffect(() => {
-  if (showLevelComplete && !hasSaved.current && user?.id) {
-    hasSaved.current = true;
-    saveGameResult(user.id, 'ukrainian', 10, false);
-  }
-}, [showLevelComplete, user?.id]);
+Во втором случае очки могут сохраниться не по событию завершения игры, а просто по рендеру.
 
-// Модальное окно
-<GameEndModal
-  isOpen={showLevelComplete}
-  isWon={true}
-  onPlayAgain={() => {
-    setShowLevelComplete(false);
-    initializeLevel();
-  }}
-  onSelectLevel={() => router.push('/ukrainian/write-word/levels')}
-  onMainMenu={() => router.push('/ukrainian')}
-  title="Чудово!"
-  winMessage={`Рівень ${currentLevel} завершено!`}
-  playAgainText="Повторити рівень"
-  mainMenuText="В головне меню"
-  hasLevels={true}
-  levelSelectHref="/ukrainian/write-word/levels"
-  showCurrentLevel={false}
-/>
-```
+## Требования к UX новой игры
 
-## 🏷️ Категории игр
+- Игра должна быть понятной на мобильном экране
+- Завершение игры должно быть явно определено
+- После победы или поражения пользователь должен получить понятное действие:
+  - повторить
+  - вернуться к уровням
+  - выйти в главное меню
 
-- **'math'** - математические игры
-- **'ukrainian'** - украинские игры  
-- **'dutch'** - голландские игры
+## Проверка перед завершением задачи
 
-## ⚠️ Частые ошибки и как их избежать
+- Игра использует `GameEndModal`
+- Очки сохраняются через `saveGameResult(...)`
+- Категория указана правильно
+- Сохранение не дублируется
+- Рестарт игры сбрасывает `hasSaved.current`
+- Победа действительно приводит к обновлению XP
+- Игра автоматически участвует в daily challenge
+- Игра автоматически влияет на leaderboard
 
-### Ошибка 1: Кастомное модальное окно
-```typescript
-// ПЛОХО - кастомное модальное окно
-{gameCompleted && (
-  <motion.div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50">
-    <div className="bg-white rounded-2xl p-8">
-      <h2>🎉 Игра завершена!</h2>
-      <button onClick={resetGame}>Сыграть еще</button>
-    </div>
-  </motion.div>
-)}
+## Что нужно помнить при изменениях системы
 
-// ХОРОШО - универсальное GameEndModal
-<GameEndModal
-  isOpen={gameCompleted}
-  isWon={true}
-  onPlayAgain={resetGame}
-  onSelectLevel={handleSelectLevel}
-  onMainMenu={handleMainMenu}
-  // ... остальные пропсы
-/>
-```
+- Если меняется логика XP, нужно проверить главную страницу, профиль и leaderboard
+- Если меняется логика daily challenge, нужно проверить:
+  - `src/lib/dailyChallenge.ts`
+  - `app/page.tsx`
+  - SQL `daily-challenge-setup.sql`
+- Если меняется leaderboard, нужно проверить:
+  - `src/lib/leaderboard.ts`
+  - `app/leaderboard/page.tsx`
+  - SQL `leaderboard-setup.sql`
 
-### Ошибка 2: Множественные вызовы saveGameResult
-```typescript
-// ПЛОХО - будет вызываться многократно
-useEffect(() => {
-  saveGameResult(user.id, 'math', 10, false); // Каждый рендер!
-}, [user?.id]);
+## Итог
 
-// ХОРОШО - защита через useRef
-useEffect(() => {
-  if (gameStatus === 'won' && !hasSaved.current && user?.id) {
-    hasSaved.current = true;
-    saveGameResult(user.id, 'math', 10, false);
-  }
-}, [gameStatus, user?.id]);
-```
+Новая игра должна подключаться к уже существующей экосистеме проекта, а не создавать новую:
 
-### Ошибка 3: Сложные формулы расчета
-```typescript
-// ПЛОХО - генерирует большие числа
-const score = calculateScore(moves, level, gridSize); // Может быть 1000+
-
-// ХОРОШО - фиксированное значение
-const score = 10;
-```
-
-### Ошибка 4: Сложные игры с canvas и физикой
-```typescript
-// ПЛОХО - сложная реализация с canvas
-const canvas = useRef<HTMLCanvasElement>(null);
-// Сложная физика, рендеринг, проблемы с гидратацией
-
-// ХОРОШО - простая карточная игра
-const [cards, setCards] = useState([]);
-// Простая логика без canvas
-```
-
-## 🔄 Порядок действий при создании новой игры
-
-1. **Выберите простой тип игры:** карточки, пары, слова - без canvas
-2. **Добавить импорты:** `useEffect, useRef`, `saveGameResult`, `useAuth`, `GameEndModal`
-3. **Создать состояние:** `gameStatus` или аналогичное
-4. **Добавить useRef:** `const hasSaved = useRef(false)`
-5. **Написать useEffect:** для сохранения при победе
-6. **Добавить GameEndModal:** с правильными пропсами
-7. **Настроить навигацию:** правильные ссылки для категории
-8. **Сбросить hasSaved:** в resetGame или при инициализации
-9. **Тестировать:** убедиться что очки сохраняются 1 раз и модальное окно работает
-
-## 🧪 Тестирование
-
-После реализации игры проверьте:
-1. **GameEndModal появляется** при победе/поражении
-2. **Все 3 кнопки работают** (повтор, уровни, меню)
-3. **Ссылки ведут правильно** на свою категорию
-4. **Очки сохраняются** при победе
-5. **Только 1 раз** за игру
-6. **Правильная категория** передается
-7. **Нет множественных вызовов** в консоли
-8. **Нет больших чисел** (больше 100) в логах
-9. **Простая реализация** без canvas/физики
-
-## 📝 Чек-лист перед коммитом
-
-- [ ] Используется GameEndModal (обязательно!)
-- [ ] Используется фиксированное значение 10 очков
-- [ ] Есть защита через `hasSaved.current`
-- [ ] useEffect имеет правильные зависимости
-- [ ] Категория правильная ('math' | 'ukrainian' | 'dutch')
-- [ ] Ссылки ведут на правильные разделы
-- [ ] Нет calculateScore или других формул
-- [ ] Простая реализация без canvas
-- [ ] Протестировано что работает
-- [ ] Все 3 кнопки в модальном окне работают
-
-## 🗑️ Уроки из удаленных игр
-
-### "Орбітальна Арифметика" (Gravity Slingshot)
-- **Проблема**: Сложная игра с canvas, физикой, гравитацией
-- **Результат**: Проблемы с гидратацией, сложная отладка
-- **Урок**: Избегайте сложных игр с canvas в Next.js
-- **Решение**: Используйте простые карточные/логические игры
-
----
-
-**Следуйте этим правилам и все игры будут иметь консистентный UX и корректно начислять очки!** 🎮✨
+- единое сохранение прогресса
+- единый daily challenge
+- единый leaderboard
+- единый UX завершения игры

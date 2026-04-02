@@ -1,215 +1,213 @@
 # ThinkGames
 
-🎮 Образовательная игровая платформа для изучения математики, голландского и украинского языков.
+ThinkGames — образовательная игровая платформа для детей, в которой изучение математики, нидерландского и украинского языков построено через короткие интерактивные игры.
 
-## 📋 Описание
+## Что есть в проекте
 
-ThinkGames - это веб-приложение для детей 8-12 лет, которое делает обучение увлекательным через интерактивные игры. Платформа включает различные типы игр для изучения математики и иностранных языков.
+- главная страница с карточками разделов
+- общий прогресс по XP
+- `Щоденний виклик` с начислением звезд
+- `Leaderboard` с рейтингом пользователей
+- профиль пользователя с именем и аватаром
+- хранение данных в Supabase
 
-## 🛠️ Технологический стек
+## Основные механики
 
-- **Frontend:** Next.js 14 (App Router)
-- **Язык:** TypeScript
-- **Стили:** Tailwind CSS
-- **Анимации:** Framer Motion
-- **Состояние:** Zustand
-- **База данных:** Supabase
-- **Деплой:** Vercel (рекомендуется)
+### XP
 
-## 📁 Структура проекта
+- каждая завершенная игра дает `10 XP`
+- XP хранится в `game_progress`
+- категории:
+  - `math`
+  - `ukrainian`
+  - `dutch`
+- 1 уровень = `500 XP`
 
-```
+### Щоденний виклик
+
+- если пользователь проходит хотя бы 1 игру за день, день засчитывается
+- за 5 дней подряд начисляется `1 звезда`
+- состояние хранится в `daily_challenge_progress`
+- звезды отображаются в верхней части главной страницы
+
+### Leaderboard
+
+- отдельный маршрут: `/leaderboard`
+- показывает:
+  - аватар
+  - имя
+  - общий XP
+  - уровень
+  - прогресс внутри уровня
+  - количество звезд
+- рейтинг строится по:
+  1. количеству звезд
+  2. общему XP
+
+## Технологический стек
+
+- Next.js 14 App Router
+- TypeScript
+- Tailwind CSS
+- Framer Motion
+- Zustand
+- Supabase
+
+## Структура проекта
+
+```text
 ThinkGames/
-├── app/                          # Next.js App Router
-│   ├── page.tsx                  # Главная страница
-│   ├── math/                     # Раздел математики
-│   │   ├── page.tsx              # Страница раздела
-│   │   ├── find-pair/            # Игра "Найди пару"
-│   │   │   ├── page.tsx          # Выбор уровня
-│   │   │   └── [level]/page.tsx  # Игра
-│   │   └── connect-pair/          # Игра "Соедини пару"
-│   ├── dutch/                    # Раздел голландского
-│   │   ├── page.tsx              # Страница раздела
-│   │   ├── words/                # Игра "Слова"
-│   │   ├── connect-words/        # Игра "Соедини слова"
-│   │   └── write-word/           # Игра "Напиши слово"
-│   └── ukrainian/                # Раздел украинского
-│       └── page.tsx              # Страница раздела
+├── app/
+│   ├── page.tsx
+│   ├── leaderboard/page.tsx
+│   ├── login/page.tsx
+│   ├── profile/page.tsx
+│   ├── math/
+│   ├── dutch/
+│   └── ukrainian/
 ├── src/
-│   ├── components/               # Реиспользуемые компоненты
-│   │   ├── layout/              # Layout компоненты
-│   │   ├── games/               # Игровые компоненты
-│   │   └── ui/                  # UI компоненты
-│   ├── types/                   # TypeScript типы
-│   ├── constants/               # Константы приложения
-│   ├── lib/                     # Утилиты и функции
-│   ├── store/                   # Zustand store
-│   └── data/                    # Статические данные
-├── public/                      # Статические файлы
-└── .env.example                 # Пример переменных окружения
+│   ├── components/
+│   ├── constants/
+│   ├── context/
+│   ├── lib/
+│   └── types/
+├── components/
+├── data/
+├── public/
+├── database-setup.sql
+├── daily-challenge-setup.sql
+├── leaderboard-setup.sql
+├── struktutra.md
+├── status.md
+└── promt_games.md
 ```
 
-## 🚀 Быстрый старт
+## Важные файлы
 
-### 1. Клонирование и установка
+### Frontend
+
+- `app/page.tsx` — главная страница
+- `app/leaderboard/page.tsx` — рейтинг пользователей
+- `src/components/layout/BottomNav.tsx` — нижнее меню
+- `src/components/GameEndModal.tsx` — общее модальное окно завершения игры
+
+### Data layer
+
+- `src/lib/points.ts` — сохранение XP
+- `src/lib/dailyChallenge.ts` — логика daily challenge
+- `src/lib/leaderboard.ts` — получение leaderboard
+- `src/lib/profile-db.ts` — профиль пользователя
+- `src/lib/supabase.ts` — Supabase client
+
+### SQL
+
+- `database-setup.sql` — profiles + trigger
+- `daily-challenge-setup.sql` — таблица `daily_challenge_progress`
+- `leaderboard-setup.sql` — view `leaderboard_stats`
+
+## Быстрый старт
+
+### 1. Установка
 
 ```bash
-git clone <repository-url>
-cd ThinkGames
 npm install
 ```
 
-### 2. Настройка Supabase
+### 2. Переменные окружения
 
-1. Создайте новый проект в [Supabase](https://supabase.com)
-2. Скопируйте URL и anon ключ
-3. Создайте файл `.env.local` на основе `.env.example`
-4. Добавьте свои переменные окружения
+Создайте `.env.local` на основе `.env.example`.
 
-```bash
-cp .env.example .env.local
-```
+Если в проекте используются переменные Supabase через env, заполните их своими значениями.
 
-### 3. Создание таблиц в Supabase
+## 3. Настройка Supabase
 
-Выполните SQL в Supabase Dashboard:
+Выполните SQL-файлы в таком порядке:
 
-```sql
--- Таблица результатов игр
-CREATE TABLE game_results (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  session_id text NOT NULL,
-  game text NOT NULL,
-  section text NOT NULL,
-  level integer NOT NULL,
-  score integer NOT NULL,
-  time_seconds integer NOT NULL,
-  created_at timestamp with time zone DEFAULT now()
-);
+1. `database-setup.sql`
+2. `daily-challenge-setup.sql`
+3. `leaderboard-setup.sql`
 
--- Таблица прогресса пользователя
-CREATE TABLE user_progress (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  session_id text NOT NULL,
-  section text NOT NULL,
-  game text NOT NULL,
-  level integer NOT NULL,
-  completed boolean DEFAULT false,
-  created_at timestamp with time zone DEFAULT now()
-);
+Это создаст:
 
--- Включение RLS
-ALTER TABLE game_results ENABLE ROW LEVEL SECURITY;
-ALTER TABLE user_progress ENABLE ROW LEVEL SECURITY;
+- таблицу `profiles`
+- таблицу `daily_challenge_progress`
+- view `leaderboard_stats`
 
--- Политики для анонимных пользователей
-CREATE POLICY "Allow anonymous game_results" ON game_results
-  FOR ALL USING (auth.role() = 'anon');
+Примечание: таблица `game_progress` уже должна существовать и использоваться для XP.
 
-CREATE POLICY "Allow anonymous user_progress" ON user_progress
-  FOR ALL USING (auth.role() = 'anon');
-```
-
-### 4. Запуск приложения
+### 4. Запуск
 
 ```bash
 npm run dev
 ```
 
-Откройте [http://localhost:3000](http://localhost:3000) в браузере.
+Приложение будет доступно по адресу [http://localhost:3000](http://localhost:3000).
 
-## 🎮 Разделы и игры
+## Разделы и игры
 
-### 🧮 Математика
+### Математика
 
-1. **Знайди пару** - игра на запоминание с карточками умножения
-   - Уровни сложности: до 20, до 50, до 100
-   - Размеры поля: 3×4, 4×4, 3×6
-   - Исключены примеры с умножением на 1
+- "Знайди пару"
+- "З'єднай пару"
+- "Ваги рівноваги"
+- "Кульковий сапер"
 
-2. **З'єднай пару** - игра на соединение примеров с ответами
-   - 10 уровней (таблицы умножения 2-10 + смешанные)
-   - Две колонки с перетаскиванием
+### Нидерландский
 
-### 🇳🇱 Нідерландська мова
+- "З'єднай слова"
+- DutchWordle
 
-1. **Слова** - изучение базовых слов
-2. **З'єднай слова** - соединение голландских слов с переводами
-   - 10 уровней по 10 слов каждый
-   - Темы: дом, школа, семья, животные, цвета, числа, еда, одежда, погода, время
+### Украинский
 
-3. **Напиши слово** - (в разработке)
+- "Напиши слово"
 
-### 📖 Українська мова
+## Навигация
 
-- Раздел в разработке
+- `/` — главная
+- `/leaderboard` — рейтинг
+- `/profile` — профиль
+- `/login` — вход
+- `/math` — раздел математики
+- `/dutch` — раздел нидерландского
+- `/ukrainian` — раздел украинского
 
-## 🎯 Игровые механики
+## Как добавлять новую игру
 
-- **Прогресс:** отслеживание прогресса по уровням
-- **Очки:** система подсчета очков с учетом сложности
-- **Анимации:** плавные переходы и микро-взаимодействия
-- **Адаптивность:** мобильный-first дизайн
-- **Сохранение:** автоматическое сохранение результатов в Supabase
+Новая игра должна:
 
-## 🛠️ Разработка
+- использовать `GameEndModal`
+- сохранять результат через `saveGameResult(...)`
+- начислять фиксированные `10 XP`
+- не дублировать логику daily challenge
+- не делать отдельную систему leaderboard
 
-### Добавление новой игры
+Подробные правила находятся в [promt_games.md](/D:/app/_in_dev_windsurf/ThinkGames/promt_games.md).
 
-1. Создайте компонент игры в `src/components/games/`
-2. Добавьте маршруты в `app/[section]/[game]/`
-3. Обновите константы в `src/constants/index.ts`
-4. Добавьте типы в `src/types/index.ts`
+## Состояние проекта
 
-### Структура компонента игры
+Актуальные статусы и технические заметки:
 
-```typescript
-// src/components/games/NewGame/NewGameGame.tsx
-import { GameLevel } from '../../types'
+- [status.md](/D:/app/_in_dev_windsurf/ThinkGames/status.md)
+- [struktutra.md](/D:/app/_in_dev_windsurf/ThinkGames/struktutra.md)
 
-interface NewGameGameProps {
-  level: GameLevel
-  onLevelComplete: (score: number) => void
-}
+## Проверка
 
-export const NewGameGame: React.FC<NewGameGameProps> = ({
-  level,
-  onLevelComplete
-}) => {
-  // Логика игры
-}
-```
-
-## 📦 Сборка и деплой
-
-### Локальная сборка
+Для проверки типов:
 
 ```bash
-npm run build
-npm start
+npx tsc --noEmit
 ```
 
-### Деплой на Vercel
+## Деплой
 
-1. Подключите репозиторий к [Vercel](https://vercel.com)
-2. Добавьте переменные окружения в Vercel Dashboard
-3. Разверните приложение
+Рекомендуемый вариант — Vercel + Supabase.
 
-## 🤝 Вклад
+Для production нужно:
 
-1. Fork проекта
-2. Создайте_feature ветку
-3. Внесите изменения
-4. Отправьте Pull Request
+- задать переменные окружения
+- подготовить таблицы и view в Supabase
+- проверить доступы RLS и `grant select` для leaderboard
 
-## 📄 Лицензия
+## Лицензия
 
-MIT License
-
-## 🙏 Благодарности
-
-- [Next.js](https://nextjs.org/) - React фреймворк
-- [Tailwind CSS](https://tailwindcss.com/) - CSS фреймворк
-- [Supabase](https://supabase.com/) - Backend as a Service
-- [Framer Motion](https://www.framer.com/motion/) - библиотека анимаций
-- [Zustand](https://github.com/pmndrs/zustand) - управление состоянием
+MIT

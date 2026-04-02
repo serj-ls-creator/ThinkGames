@@ -1,259 +1,164 @@
 # Структура проекта ThinkGames
 
-## 📁 Общая структура
+## Общая структура
 
-```
+```text
 ThinkGames/
-├── app/                          # Next.js App Router страницы
-├── src/                          # Исходный код компонентов и утилит
-├── components/                   # Переиспользуемые компоненты
-├── data/                         # Данные для игр
-├── lib/                          # Утилиты и функции
-├── store/                        # Zustand store
-├── status.md                     # Статус проекта
+├── app/                         # Страницы Next.js App Router
+├── components/                  # Старые и переиспользуемые игровые компоненты
+├── data/                        # Игровые данные
+├── lib/                         # Вспомогательные утилиты верхнего уровня
+├── public/                      # Статические ресурсы
+├── src/
+│   ├── components/              # Основные UI и игровые компоненты
+│   ├── constants/               # Константы и маршруты
+│   ├── context/                 # AuthContext
+│   ├── data/                    # Данные для игр
+│   ├── lib/                     # Работа с Supabase, очками, leaderboard, profile
+│   └── types/                   # Общие типы проекта
+├── store/                       # Zustand store
+├── cleanup_duplicates.sql       # Очистка дублей в game_progress
+├── daily-challenge-setup.sql    # SQL для daily_challenge_progress
+├── database-setup.sql           # SQL для profiles и триггера создания профиля
+├── leaderboard-setup.sql        # SQL view leaderboard_stats
 ├── promt_games.md               # Правила разработки игр
-├── struktutra.md                # Этот файл
-└── README.md                     # Документация проекта
+├── status.md                    # Текущий статус проекта
+└── struktutra.md                # Этот файл
 ```
 
-## 📂 Детальная структура файлов
+## app/
 
-### 🏠 app/ - Страницы Next.js
+### Основные страницы
 
-#### Главная страница
-- **`app/page.tsx`** - Главная страница с карточками предметов
+- `app/page.tsx` — главная страница с карточками предметов, верхним счетчиком звезд и блоком "Щоденний виклик"
+- `app/leaderboard/page.tsx` — экран рейтинга пользователей
+- `app/login/page.tsx` — вход через Supabase Auth
+- `app/profile/page.tsx` — профиль пользователя
+- `app/layout.tsx` — корневой layout и `AuthProvider`
 
-#### Математические игры
-- **`app/math/page.tsx`** - Выбор математических игр
-- **`app/math/pair-game/`** - Игра "Знайди пару"
-  - `page.tsx` - Выбор уровней сложности
-  - `play/page.tsx` - Игровой процесс с GameEndModal
-- **`app/math/connect-pairs/`** - Игра "З'єднай пару" (таблица умножения)
-  - `page.tsx` - Выбор уровней
-  - `[level]/page.tsx` - Игровой процесс с MathConnectPairsGame
-- **`app/math/balance-scale/`** - Игра "Ваги рівноваги"
-  - `page.tsx` - Выбор уровней
-  - `[maxValue]/page.tsx` - Игровой процесс с BalanceScaleGame
-- **`app/math/balloon-sweeper/`** - Игра "Кульковий сапер"
-  - `page.tsx` - Выбор сложности
-  - `[difficulty]/page.tsx` - Игровой процесс с BalloonSweeperGame
-- **`app/math/gravity-slingshot/[level]/`** - Игра "Гравітаційна Рогатка" 
-  - `GravityGameClient.tsx` - Основной компонент игры с адаптивными размерами
-  - Адаптивные размеры: десктоп 600×440, телефон 400×450
-  - Исправленный джойстик с точным центрированием
-  - Правильная логика проверки ответов и границ астероидов
+### Математика
 
-#### Нидерландские игры
-- **`app/dutch/page.tsx`** - Выбор нидерландских игр
-- **`app/dutch/connect-pairs/`** - Игра "З'єднай слова"
-  - `page.tsx` - Выбор уровней
-  - `[level]/page.tsx` - Игровой процесс с DutchConnectPairsGame
-- **`app/dutch/wordle/`** - Игра DutchWordle
-  - `page.tsx` - Выбор уровней
-  - `[level]/page.tsx` - Игровой процесс с DutchWordle
+- `app/math/page.tsx` — выбор математических игр
+- `app/math/pair-game/play/page.tsx` — игра "Знайди пару"
+- `app/math/connect-pairs/page.tsx` — выбор уровней "З'єднай пару"
+- `app/math/connect-pairs/[level]/page.tsx` — игра "З'єднай пару"
+- `app/math/balance-scale/page.tsx` — выбор уровней "Ваги рівноваги"
+- `app/math/balance-scale/[level]/page.tsx` — игра "Ваги рівноваги"
+- `app/math/balloon-sweeper/page.tsx` — выбор сложности "Кульковий сапер"
+- `app/math/balloon-sweeper/[difficulty]/page.tsx` — игра "Кульковий сапер"
 
-#### Украинские игры
-- **`app/ukrainian/page.tsx`** - Выбор украинских игр
-- **`app/ukrainian/write-word/`** - Игра "Напиши слово"
-  - `page.tsx` - Перенаправление на уровни
-  - `levels/page.tsx` - Выбор уровней
-  - `level/[level]/page.tsx` - Игровой процесс с GameEndModal
+### Нидерландский
 
-#### Аутентификация и профиль
-- **`app/login/page.tsx`** - Страница входа
-- **`app/profile/page.tsx`** - Профиль пользователя
+- `app/dutch/page.tsx` — выбор игр раздела
+- `app/dutch/connect-pairs/page.tsx` — выбор уровней
+- `app/dutch/connect-pairs/[level]/page.tsx` — игра на соединение слов
+- `app/dutch/wordle/levels/page.tsx` — выбор уровней DutchWordle
+- `app/dutch/wordle/level/[level]/page.tsx` — DutchWordle
 
-### 🧩 src/ - Основные компоненты
+### Украинский
 
-#### Игровые компоненты
-- **`src/components/games/BalanceScale/`** - Игра "Ваги рівноваги"
-  - `BalanceScaleGame.tsx` - Основной компонент игры
-  - `BalanceWeight.tsx` - Компонент весов
-- **`src/components/games/BalloonSweeper/`** - Игра "Кульковий сапер"
-  - `BalloonSweeperGame.tsx` - Основной компонент игры
-- **`src/components/games/ConnectPair/`** - Игра "З'єднай пару" (старая версия)
-  - `ConnectPairGame.tsx` - Основной компонент игры
-- **`src/components/games/FindPair/`** - Игра "Знайди пару"
-  - `FindPairGame.tsx` - Основной компонент игры
-  - `Card.tsx` - Компонент карточки
-  - `GameGrid.tsx` - Сетка карточек
-- **`src/components/games/DutchWordle/`** - Игра DutchWordle
-  - `DutchWordle.tsx` - Основной компонент игры
+- `app/ukrainian/page.tsx` — выбор игр раздела
+- `app/ukrainian/write-word/levels/page.tsx` — выбор уровней
+- `app/ukrainian/write-word/level/[level]/page.tsx` — игра "Напиши слово"
 
-#### Универсальные компоненты
-- **`src/components/GameEndModal.tsx`** - **Универсальное модальное окно для всех игр**
-  - 3 кнопки: Повторить → Назад к рівням → В головне меню
-  - Гибкая конфигурация через пропсы
-  - Автоматическая подстройка под каждую игру
+## src/components/
 
-#### UI компоненты
-- **`src/components/Header.tsx`** - Шапка сайта
-- **`src/components/LevelSelector.tsx`** - Выбор уровней
-- **`src/components/LevelSelectorCompact.tsx`** - Компактный выбор уровней
-- **`src/components/GameGrid.tsx`** - Универсальная сетка для игр
-- **`src/components/ui/Joystick.tsx`** - **Исправленный джойстик для мобильных устройств**
-  - Точное центрирование стика в центре базы
-  - Абсолютное позиционирование для точных координат
-  - Адаптивные размеры: size=120px, stickSize=40px
-  - Правильная обработка touch событий с passive: false
-  - Плавная анимация через Framer Motion
+### Layout и UI
 
-### 🔧 components/ - Переиспользуемые компоненты
+- `src/components/layout/BottomNav.tsx` — нижнее меню: Главная, Игры, Leaderboard, Профиль
+- `src/components/layout/SectionCard.tsx` — карточка предмета на главной
+- `src/components/ui/ProgressBar.tsx` — прогресс-бар
+- `src/components/GameEndModal.tsx` — универсальное модальное окно завершения игры
 
-#### Разделенные игровые компоненты
-- **`components/DutchConnectPairsGame.tsx`** - Игра "З'єднай слова" (нидерландская)
-  - Использует GameEndModal с правильными ссылками на /dutch
-- **`components/MathConnectPairsGame.tsx`** - Игра "З'єднай пару" (математика)
-  - Использует GameEndModal с правильными ссылками на /math
-- **`components/ConnectPairsGame.tsx`** - **Старый общий компонент** (не используется)
+### Игры
 
-#### Другие компоненты
-- **`components/GameGrid.tsx`** - Сетка для игр типа "найди пару"
+- `src/components/games/FindPair/FindPairGame.tsx`
+- `src/components/games/BalanceScale/BalanceScaleGame.tsx`
+- `src/components/games/BalloonSweeper/BalloonSweeperGame.tsx`
+- `src/components/games/DutchWordle/DutchWordle.tsx`
+- `components/MathConnectPairsGame.tsx`
+- `components/DutchConnectPairsGame.tsx`
 
-### 📊 data/ - Данные для игр
+## src/lib/
 
-#### Игровые данные
-- **`data/math-pairs.ts`** - Пары для математической игры "З'єднай пару"
-- **`data/dutch-words.ts`** - Нидерландские слова для игры "З'єднай слова"
-- **`data/math-pairs.ts`** - Математические пары для таблицы умножения
+### Прогресс и XP
 
-#### Константы
-- **`src/constants/ukrainianWords.ts`** - Украинские слова для игры "Напиши слово"
-- **`src/constants/dutchGuessWords.ts`** - Слова для DutchWordle
-- **`src/data/dutchWords.ts`** - Данные нидерландских слов
+- `src/lib/points.ts`
+  - хранение XP по категориям в `game_progress`
+  - `saveGameResult(...)` — общая точка сохранения результата игры
+  - после успешного сохранения XP запускает обновление daily challenge
 
-### 🛠️ lib/ - Утилиты и функции
+### Daily Challenge
 
-#### Игровая логика
-- **`src/lib/balanceScale.ts`** - Логика игры "Ваги рівноваги"
-  - `BALANCE_LEVELS` - Уровни сложности
-  - `generateBalanceRound` - Генерация раундов
-  - `BalanceWeight` - Тип весов
-- **`src/lib/balloonSweeper.ts`** - Логика игры "Кульковий сапер"
-  - `BALLOON_LEVELS` - Уровни сложности
-  - `generateBoard` - Генерация поля
-  - `BalloonCell` - Тип клетки
-- **`src/lib/generatePairs.ts`** - Генерация пар для игр
-  - `generateMathPairs` - Математические пары
-  - `generateDutchPairs` - Нидерландские пары
-  - `calculateScore` - **Устаревшая функция** (не используется)
+- `src/lib/dailyChallenge.ts`
+  - чтение состояния из `daily_challenge_progress`
+  - логика серии "1 игра в день"
+  - начисление 1 звезды за 5 дней подряд
 
-#### Система очков
-- **`src/lib/points.ts`** - Сохранение очков в Supabase
-  - `saveGameResult` - Основная функция сохранения
+### Leaderboard
 
-#### Утилиты
-- **`src/lib/utils.ts`** - Общие утилиты
-  - `getSessionId` - Получение ID сессии
-- **`lib/testUniquePairs.ts`** - Тестирование уникальности пар
+- `src/lib/leaderboard.ts`
+  - загрузка данных из view `leaderboard_stats`
+  - расчет уровня и прогресса внутри уровня на клиенте
 
-### 🗄️ store/ - Управление состоянием
+### Профиль и Auth
 
-- **`store/useGameStore.ts`** - Zustand store для игры "Знайди пару"
-  - Состояние карточек, ходов, прогресса
-  - Функции инициализации и сброса
+- `src/lib/profile-db.ts` — чтение и обновление `profiles`
+- `src/lib/supabase.ts` — инициализация Supabase client
+- `src/context/AuthContext.tsx` — работа с текущим пользователем
 
-### 🔐 Аутентификация
+## SQL-слой Supabase
 
-- **`src/context/AuthContext.tsx`** - Контекст аутентификации Supabase
-- **`src/context/AuthContext.ts`** - Типы для аутентификации
+### Таблицы
 
-### 📝 Типы
+- `profiles` — имя и аватар пользователя
+- `game_progress` — XP по категориям `math`, `ukrainian`, `dutch`
+- `daily_challenge_progress` — звезды, дни серии, последняя дата выполнения
 
-- **`src/types/index.ts`** - Общие типы проекта
-  - `WordPair` - Тип для пар слов
-  - Другие игровые типы
+### View
 
-### 📋 Документация
+- `leaderboard_stats`
+  - объединяет `profiles`
+  - суммирует XP из `game_progress`
+  - подтягивает звезды из `daily_challenge_progress`
 
-- **`status.md`** - Текущий статус реализации проекта
-- **`promt_games.md`** - Правила разработки игр с GameEndModal
-- **`struktutra.md`** - Этот файл (структура проекта)
-- **`README.md`** - Основная документация
+## Потоки данных
 
-## 🎮 Игровые компоненты и их использование
+### Завершение игры
 
-### ✅ Компоненты с GameEndModal (универсальное модальное окно)
+1. Игра завершилась успешно
+2. Вызывается `saveGameResult(user.id, category, 10, false)`
+3. В `game_progress` обновляется XP пользователя
+4. В `daily_challenge_progress` отмечается текущий день
+5. На главной странице и в leaderboard отображаются обновленные данные
 
-1. **BalanceScaleGame** (`src/components/games/BalanceScale/BalanceScaleGame.tsx`)
-   - Ссылки: `/math/balance-scale`, `/math`
-   - Кнопки: "Далі" → "Назад к рівням" → "В головне меню"
+### Главная страница
 
-2. **BalloonSweeperGame** (`src/components/games/BalloonSweeper/BalloonSweeperGame.tsx`)
-   - Ссылки: `/math/balloon-sweeper`, `/math`
-   - Кнопки: "Почати знову" → "Назад к рівням" → "В головне меню"
+1. Загружает профиль пользователя
+2. Загружает XP-статистику из `game_progress`
+3. Загружает состояние daily challenge из `daily_challenge_progress`
+4. Показывает звезды в верхней части экрана и прогресс серии 0/5 ... 5/5
 
-3. **FindPairGame** (`src/components/games/FindPair/FindPairGame.tsx`)
-   - Ссылки: `/math/find-pair`, `/math`
-   - Кнопки: "Грати знову" → "Назад к рівням" → "В головне меню"
+### Leaderboard
 
-4. **DutchWordle** (`src/components/games/DutchWordle/DutchWordle.tsx`)
-   - Ссылки: `/dutch/wordle/levels`, `/dutch`
-   - Кнопки: "Ще раз" → "Назад к рівням" → "В головне меню"
+1. Читает `leaderboard_stats`
+2. Сортирует пользователей по `stars DESC`, затем по `total_xp DESC`
+3. Показывает аватар, имя, общий XP, уровень и звезды
 
-5. **DutchConnectPairsGame** (`components/DutchConnectPairsGame.tsx`)
-   - Ссылки: `/dutch/connect-pairs`, `/dutch`
-   - Кнопки: "Ще раз" → "Назад к рівням" → "В головне меню"
+## Актуальные маршруты
 
-6. **MathConnectPairsGame** (`components/MathConnectPairsGame.tsx`)
-   - Ссылки: `/math/connect-pairs`, `/math`
-   - Кнопки: "Ще раз" → "Назад к рівням" → "В головне меню"
+- `/` — главная
+- `/leaderboard` — рейтинг
+- `/profile` — профиль
+- `/login` — вход
+- `/math` — математика
+- `/dutch` — нидерландский
+- `/ukrainian` — украинский
 
-7. **"Знайди пару"** (`app/math/pair-game/play/page.tsx`)
-   - Ссылки: `/math/pair-game`, `/math`
-   - Кнопки: "Грати знову" → "Назад к рівням" → "В головне меню"
+## Примечания
 
-8. **"Напиши слово"** (`app/ukrainian/write-word/level/[level]/page.tsx`)
-   - Ссылки: `/ukrainian/write-word/levels`, `/ukrainian`
-   - Кнопки: "Повторити рівень" → "Назад к рівням" → "В головне меню"
-
-### ❌ Компоненты без GameEndModal (устаревшие)
-
-1. **ConnectPairGame** (`src/components/games/ConnectPair/ConnectPairGame.tsx`)
-   - Старый компонент, не используется
-   - Заменен на MathConnectPairsGame и DutchConnectPairsGame
-
-1. **"Гравітаційна Рогатка" (Gravity Slingshot)**
-   - Была: `app/math/gravity-slingshot/`
-   - Удалена из проекта (сложность реализации)
-   - исправленными проблемами:
-     - ✅ Адаптивные размеры canvas (десктоп 600×440, телефон 400×450)
-     - ✅ Исправленный джойстик с точным центрированием стика
-     - ✅ Правильная логика проверки ответов (планета 12, ответ 6+6=12)
-     - ✅ Адаптивные границы астероидов (не вылетают за края)
-     - ✅ Расширенное рабочее пространство (отступ 5px от границ)
-
-## 🔄 Потоки данных
-
-### 🎮 Игровой цикл
-1. **Инициализация игры** → Загрузка данных из `data/`
-2. **Игровой процесс** → Обновление состояния в компонентах
-3. **Завершение игры** → Показ GameEndModal
-4. **Сохранение очков** → `saveGameResult` в Supabase
-5. **Навигация** → Переход по ссылкам из GameEndModal
-
-### 📊 Система очков
-1. **Завершение игры** → useEffect срабатывает
-2. **Проверка условий** → `hasSaved.current` защита
-3. **Сохранение** → `saveGameResult(user.id, category, 10, false)`
-4. **Логирование** → `console.log('!!! GAME COMPLETE: 10 XP SENT !!!')`
-
-### 🎯 Категории игр
-- **'math'** → `/math/*` маршруты
-- **'dutch'** → `/dutch/*` маршруты  
-- **'ukrainian'** → `/ukrainian/*` маршруты
-
-## 🛠️ Технический стек
-
-- **Framework**: Next.js 14 App Router
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **State**: Zustand
-- **Animations**: Framer Motion
-- **Database**: Supabase
-- **Auth**: Supabase Auth
-- **Speech**: Web Speech Synthesis API
-
----
-
-**Эта структура обеспечивает консистентный UX и легкую поддержку всех игр!** 🎮✨
+- Гости могут играть, но Supabase-статистика и daily challenge рассчитаны на авторизованных пользователей
+- Для корректной работы daily challenge и leaderboard в Supabase должны быть выполнены:
+  - `database-setup.sql`
+  - `daily-challenge-setup.sql`
+  - `leaderboard-setup.sql`

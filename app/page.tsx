@@ -7,10 +7,33 @@ import { SectionCard } from '../src/components/layout/SectionCard'
 import { BottomNav } from '../src/components/layout/BottomNav'
 import { ProgressBar } from '../src/components/ui/ProgressBar'
 import { SECTIONS } from '../src/constants'
+import {
+  DAILY_CHALLENGE_GOAL_DAYS,
+  getDailyChallengeState
+} from '../src/lib/dailyChallenge'
 import { DEFAULT_PROFILE } from '../src/lib/profile'
 import { getLevelProgress, getUserStats } from '../src/lib/points'
 import { getUserProfile } from '../src/lib/profile-db'
 import { useAuth } from '../src/context/AuthContext'
+
+type SubjectProgress = {
+  currentLevel: number
+  xpInLevel: number
+  xpToNextLevel: number
+  progressPercentage: number
+}
+
+type DailyChallengeViewState = {
+  stars: number
+  daysInCycle: number
+}
+
+const DEFAULT_SUBJECT_PROGRESS: SubjectProgress = {
+  currentLevel: 1,
+  xpInLevel: 0,
+  xpToNextLevel: 500,
+  progressPercentage: 0
+}
 
 export default function Home() {
   const { user } = useAuth()
@@ -19,22 +42,33 @@ export default function Home() {
     avatar: DEFAULT_PROFILE.avatar
   })
   const [userStats, setUserStats] = useState({
-    math: { currentLevel: 1, xpInLevel: 0, xpToNextLevel: 500, progressPercentage: 0 },
-    ukrainian: { currentLevel: 1, xpInLevel: 0, xpToNextLevel: 500, progressPercentage: 0 },
-    dutch: { currentLevel: 1, xpInLevel: 0, xpToNextLevel: 500, progressPercentage: 0 }
+    math: DEFAULT_SUBJECT_PROGRESS,
+    ukrainian: DEFAULT_SUBJECT_PROGRESS,
+    dutch: DEFAULT_SUBJECT_PROGRESS
   })
   const [stats, setStats] = useState<any>(null)
+  const [dailyChallenge, setDailyChallenge] = useState<DailyChallengeViewState>({
+    stars: 0,
+    daysInCycle: 0
+  })
   const [loading, setLoading] = useState(true)
 
-  // Загрузка профиля и статистики из Supabase
   useEffect(() => {
     if (!user?.id) {
-      setLoading(true)
+      setDailyChallenge({
+        stars: 0,
+        daysInCycle: 0
+      })
+      setLoading(false)
       return
     }
 
     const loadData = async () => {
-      // Загрузка профиля
+      const { success: challengeSuccess, data: challengeData } = await getDailyChallengeState(user.id)
+      if (challengeSuccess && challengeData) {
+        setDailyChallenge(challengeData)
+      }
+
       const { success: profileSuccess, data: profileData } = await getUserProfile(user.id)
       if (profileSuccess && profileData) {
         setProfile({
@@ -42,47 +76,50 @@ export default function Home() {
           avatar: profileData.avatar_url || DEFAULT_PROFILE.avatar
         })
       } else {
-        // Если профиля нет, используем email и стандартный аватар
         setProfile({
           name: user.email || DEFAULT_PROFILE.name,
           avatar: DEFAULT_PROFILE.avatar
         })
       }
 
-      // Загрузка статистики
       const { success: statsSuccess, data: statsData } = await getUserStats(user.id)
       if (statsSuccess && statsData) {
-        setStats(statsData) // Сохраняем сырые данные
+        setStats(statsData)
         setUserStats({
           math: getLevelProgress(statsData.math_xp || 0),
-          ukrainian: getLevelProgress(statsData.ukrainian_xp || 0), // Используем ukrainian_xp
+          ukrainian: getLevelProgress(statsData.ukrainian_xp || 0),
           dutch: getLevelProgress(statsData.dutch_xp || 0)
         })
       }
+
       setLoading(false)
     }
 
     loadData()
-  }, [user?.id, user?.email])
+  }, [user?.email, user?.id])
 
-  // Обновление прогресса при изменении
   useEffect(() => {
     if (!user?.id) return
-    
+
     const updateProgress = async () => {
+      const { success: challengeSuccess, data: challengeData } = await getDailyChallengeState(user.id)
+      if (challengeSuccess && challengeData) {
+        setDailyChallenge(challengeData)
+      }
+
       const { success, data } = await getUserStats(user.id)
       if (success && data) {
-        setStats(data) // Обновляем сырые данные
+        setStats(data)
         setUserStats({
           math: getLevelProgress(data.math_xp || 0),
-          ukrainian: getLevelProgress(data.ukrainian_xp || 0), // Используем ukrainian_xp
+          ukrainian: getLevelProgress(data.ukrainian_xp || 0),
           dutch: getLevelProgress(data.dutch_xp || 0)
         })
       }
     }
-    
+
     window.addEventListener('focus', updateProgress)
-    
+
     return () => {
       window.removeEventListener('focus', updateProgress)
     }
@@ -90,7 +127,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#EEE9FF] via-[#F5F0FF] to-[#FAF5FF]">
-      <div className="max-w-sm mx-auto px-4 py-6 pb-24">
+      <div className="mx-auto max-w-sm px-4 py-6 pb-24">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -102,14 +139,19 @@ export default function Home() {
               href="/profile"
               className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-purple-400 to-purple-600 text-xl text-white shadow-lg transition-transform hover:scale-105"
             >
-                {profile.avatar}
+              {profile.avatar}
             </Link>
+
+            <div className="flex items-center gap-2 rounded-full bg-white/90 px-3 py-2 shadow-sm ring-1 ring-yellow-200">
+              <span className="text-base leading-none">⭐</span>
+              <span className="text-sm font-bold text-gray-800">{dailyChallenge.stars}</span>
+            </div>
 
             <div className="relative">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200">
                 <span className="text-xs">🔔</span>
               </div>
-              <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500"></div>
+              <div className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-red-500"></div>
             </div>
           </div>
 
@@ -118,10 +160,10 @@ export default function Home() {
           </h1>
 
           <div className="space-y-2">
-            <ProgressBar 
-              current={userStats.math.xpInLevel} 
-              total={userStats.math.xpToNextLevel} 
-              showLabel={true} 
+            <ProgressBar
+              current={userStats.math.xpInLevel}
+              total={userStats.math.xpToNextLevel}
+              showLabel={true}
               color="bg-gradient-to-r from-blue-500 to-cyan-500"
             />
             {stats && (
@@ -129,6 +171,7 @@ export default function Home() {
                 Lvl {Math.floor(stats.total_xp / 500) + 1} - Всього: {stats.total_xp} XP
               </p>
             )}
+            {!stats && !loading && <p className="text-sm text-gray-600">Всього: 0 XP</p>}
           </div>
         </motion.div>
 
@@ -139,7 +182,8 @@ export default function Home() {
           className="space-y-4"
         >
           {SECTIONS.map((subject) => {
-            const subjectStats = userStats[subject.id as keyof typeof userStats];
+            const subjectStats = userStats[subject.id as keyof typeof userStats]
+
             return (
               <SectionCard
                 key={subject.id}
@@ -166,10 +210,12 @@ export default function Home() {
             <div className="p-5">
               <div className="mb-3 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="text-3xl">🌟</div>
+                  <div className="text-3xl">⭐</div>
                   <div>
                     <h3 className="text-lg font-bold text-white">Щоденний виклик</h3>
-                    <p className="mt-1 text-sm text-yellow-100">Виконай завдання дня</p>
+                    <p className="mt-1 text-sm text-yellow-100">
+                      Проходь хоча б 1 гру на день 5 днів поспіль
+                    </p>
                   </div>
                 </div>
               </div>
@@ -177,21 +223,25 @@ export default function Home() {
               <div className="mb-4">
                 <div className="mb-1 flex items-center justify-between">
                   <span className="text-xs text-yellow-100">Прогрес</span>
-                  <span className="text-xs font-medium text-white">3/5</span>
+                  <span className="text-xs font-medium text-white">
+                    {dailyChallenge.daysInCycle}/{DAILY_CHALLENGE_GOAL_DAYS}
+                  </span>
                 </div>
                 <div className="h-2 w-full overflow-hidden rounded-full bg-yellow-200">
                   <motion.div
                     initial={{ width: 0 }}
-                    animate={{ width: '60%' }}
+                    animate={{
+                      width: `${(dailyChallenge.daysInCycle / DAILY_CHALLENGE_GOAL_DAYS) * 100}%`
+                    }}
                     transition={{ duration: 1, delay: 0.8 }}
                     className="h-full bg-white"
                   />
                 </div>
               </div>
 
-              <button className="w-full rounded-xl bg-white/20 px-4 py-3 font-bold text-white backdrop-blur-sm transition-colors duration-200 hover:bg-white/30">
-                Продовжити →
-              </button>
+              <div className="rounded-xl bg-white/20 px-4 py-3 text-center text-sm font-semibold text-white backdrop-blur-sm">
+                Отримано зірок: {dailyChallenge.stars}
+              </div>
             </div>
           </div>
         </motion.div>
