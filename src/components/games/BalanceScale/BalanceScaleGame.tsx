@@ -43,7 +43,7 @@ const WeightBadge = ({
     }`}
   >
     <div
-      className={`${xLarge ? 'h-4 w-8' : large ? 'h-3 w-6' : 'h-2.5 w-5'} rounded-full border`}
+      className={`${xLarge ? 'h-4 w-9' : large ? 'h-3 w-6' : 'h-2.5 w-5'} rounded-full border`}
       style={{
         borderColor: active ? '#020617' : '#111827',
         backgroundColor: active ? '#020617' : '#111827',
@@ -51,14 +51,34 @@ const WeightBadge = ({
     />
     <div
       className={`-mt-1 rounded-[1rem] px-3 shadow-md ${
-        xLarge ? 'min-w-[4.75rem] py-3 text-[2rem]' : large ? 'min-w-12 py-2 text-lg' : 'min-w-9 py-1 text-sm'
+        xLarge ? 'min-w-[5rem] py-3 text-[2.4rem]' : large ? 'min-w-12 py-2 text-lg' : 'min-w-10 py-1.5 text-base'
       }`}
       style={{
         background: 'linear-gradient(180deg, #374151 0%, #111827 55%, #020617 100%)',
         boxShadow: '0 8px 18px rgba(15, 23, 42, 0.24)',
       }}
     >
-      <div className="text-center font-black text-slate-50">{value}</div>
+      <div
+        className="text-center font-black text-slate-50"
+        style={
+          xLarge
+            ? {
+                fontSize: '2.7rem',
+                lineHeight: 1,
+              }
+            : large
+              ? {
+                  fontSize: '1.45rem',
+                  lineHeight: 1,
+                }
+              : {
+                  fontSize: '1.15rem',
+                  lineHeight: 1,
+                }
+        }
+      >
+        {value}
+      </div>
     </div>
   </div>
 )
@@ -195,7 +215,7 @@ export const BalanceScaleGame: React.FC<BalanceScaleGameProps> = ({ maxValue }) 
                 />
                 <circle cx="205" cy="170" r="16" fill={SCALE_COLORS.cups} />
                 <circle cx="205" cy="170" r="8" fill={SCALE_COLORS.accent} />
-                <foreignObject x="137" y="26" width="136" height="82">
+                <foreignObject x="132" y="2" width="146" height="98">
                   <div className="flex h-full w-full items-end justify-center">
                     <WeightBadge value={round.target} xLarge={true} active={true} />
                   </div>
