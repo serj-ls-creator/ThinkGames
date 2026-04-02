@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { UKRAINIAN_LEVELS } from '../../../../../src/constants/ukrainianWords'
 import { saveGameResult } from '../../../../../src/lib/points'
+import { preloadSpeechVoices, speakText } from '../../../../../src/lib/speech'
 import { useAuth } from '@/src/context/AuthContext'
 import GameEndModal from '../../../../../src/components/GameEndModal'
 
@@ -40,10 +41,9 @@ export default function WriteWordGamePage({ params }: WriteWordGamePageProps) {
   const currentLevelData = UKRAINIAN_LEVELS.find(level => level.level === currentLevel)
   const currentWord = currentLevelData?.words[currentWordIndex] || ''
 
+  const isMobile = () => true
+
   // Проверка на мобильное устройство
-  const isMobile = () => {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  }
 
   // Отказоустойчивая функция озвучки для Chrome/Edge на Windows
   const speak = (text: string, lang: string = 'uk-UA') => {
@@ -66,8 +66,7 @@ export default function WriteWordGamePage({ params }: WriteWordGamePageProps) {
       
       // Ищем голос максимально точно
       const targetVoice = voices.find(v => 
-        v.lang.toLowerCase().includes('uk') || 
-        v.lang.toLowerCase().includes('ua')
+        v.lang.toLowerCase().startsWith('uk')
       );
 
       if (targetVoice) {
@@ -75,10 +74,7 @@ export default function WriteWordGamePage({ params }: WriteWordGamePageProps) {
       } else {
         // Fallback - ищем любой славянский голос
         const fallbackVoice = voices.find(v => 
-          v.lang.toLowerCase().includes('ru') || 
-          v.lang.toLowerCase().includes('pl') ||
-          v.lang.toLowerCase().includes('bg') ||
-          v.lang.toLowerCase().includes('cs')
+          v.lang.toLowerCase().startsWith('uk')
         );
         if (fallbackVoice) {
           utterance.voice = fallbackVoice;
@@ -101,10 +97,8 @@ export default function WriteWordGamePage({ params }: WriteWordGamePageProps) {
   // Глобальная инициализация голосов для Chrome
   useEffect(() => {
     // Нужно вызвать это при старте, чтобы Chrome «проснулся»
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      window.speechSynthesis.getVoices();
-    }
-  }, []);
+    return preloadSpeechVoices()
+  }, [])
 
   // Инициализация игры
   useEffect(() => {
@@ -116,7 +110,7 @@ export default function WriteWordGamePage({ params }: WriteWordGamePageProps) {
   // Автоматическая озвучка при старте нового слова
   useEffect(() => {
     if (currentWord) {
-      setTimeout(() => speak(currentWord), 500)
+      setTimeout(() => speakText(currentWord, 'uk-UA'), 500)
     }
   }, [currentWord])
 
@@ -334,8 +328,8 @@ export default function WriteWordGamePage({ params }: WriteWordGamePageProps) {
           className="text-center mb-8"
         >
           <button
-            onClick={() => speak(currentWord)}
-            className="inline-flex items-center bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-full shadow-lg transition-colors text-lg font-semibold"
+            onClick={() => speakText(currentWord, 'uk-UA')}
+            className="inline-flex items-center bg-violet-800 hover:bg-violet-900 text-white px-6 py-3 rounded-full shadow-lg transition-colors text-lg font-semibold"
           >
             🔊 Послухати слово
           </button>

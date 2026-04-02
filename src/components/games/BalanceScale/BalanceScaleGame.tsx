@@ -2,15 +2,26 @@
 
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { useEffect, useMemo, useState, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { BALANCE_LEVELS, BalanceWeight, generateBalanceRound } from '../../../lib/balanceScale'
-import { saveGameResult } from '../../../lib/points'
-import { useAuth } from '../../../context/AuthContext'
 import GameEndModal from '../../../components/GameEndModal'
+import { useAuth } from '../../../context/AuthContext'
+import { saveGameResult } from '../../../lib/points'
 
 interface BalanceScaleGameProps {
   maxValue: number
 }
+
+const SCALE_COLORS = {
+  beam: '#1f3a5f',
+  rods: '#244b45',
+  cups: '#312e81',
+  pivotOuter: '#4a1d96',
+  stand: '#3f2a56',
+  baseTop: '#3b2f4a',
+  baseBottom: '#2b2434',
+  accent: '#f8fafc',
+} as const
 
 const getLevelLabel = (maxValue: number) =>
   BALANCE_LEVELS.find((level) => level.value === maxValue)?.label ?? `До ${maxValue}`
@@ -24,7 +35,9 @@ const WeightBadge = ({
   large?: boolean
   active?: boolean
 }) => (
-  <div className={`relative inline-flex flex-col items-center ${large ? 'scale-95 sm:scale-100' : 'scale-90 sm:scale-100'}`}>
+  <div
+    className={`relative inline-flex flex-col items-center ${large ? 'scale-95 sm:scale-100' : 'scale-90 sm:scale-100'}`}
+  >
     <div
       className={`${large ? 'h-3 w-6' : 'h-2.5 w-5'} rounded-full border`}
       style={{
@@ -49,7 +62,7 @@ export const BalanceScaleGame: React.FC<BalanceScaleGameProps> = ({ maxValue }) 
   const [round, setRound] = useState(() => generateBalanceRound(maxValue))
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [showWinMessage, setShowWinMessage] = useState(false)
-  const hasSaved = useRef(false) // Защита от множественных сохранений
+  const hasSaved = useRef(false)
 
   const selectedWeights = useMemo(
     () => round.availableWeights.filter((weight) => selectedIds.includes(weight.id)),
@@ -82,13 +95,12 @@ export const BalanceScaleGame: React.FC<BalanceScaleGameProps> = ({ maxValue }) 
     return () => window.clearTimeout(timeoutId)
   }, [isBalanced, round.target, selectedIds])
 
-  // Сохранение очков при победе
   useEffect(() => {
     if (showWinMessage && !hasSaved.current && user?.id) {
-      hasSaved.current = true;
-      saveGameResult(user.id, 'math', 10, false);
+      hasSaved.current = true
+      void saveGameResult(user.id, 'math', 10, false)
     }
-  }, [showWinMessage, user?.id]);
+  }, [showWinMessage, user?.id])
 
   const handleWeightToggle = (weight: BalanceWeight) => {
     if (showWinMessage) return
@@ -102,7 +114,7 @@ export const BalanceScaleGame: React.FC<BalanceScaleGameProps> = ({ maxValue }) 
     setRound(generateBalanceRound(maxValue))
     setSelectedIds([])
     setShowWinMessage(false)
-    hasSaved.current = false // Сброс флага сохранения
+    hasSaved.current = false
   }
 
   return (
@@ -141,20 +153,22 @@ export const BalanceScaleGame: React.FC<BalanceScaleGameProps> = ({ maxValue }) 
           transition={{ duration: 0.3, delay: 0.05 }}
           className="relative mb-3 rounded-[1.6rem] border border-slate-200 bg-white p-3 shadow-xl sm:p-4"
         >
-          <div className="relative mx-auto w-full max-w-3xl overflow-visible aspect-[760/330] min-h-[220px]">
+          <div className="relative mx-auto aspect-[760/360] min-h-[250px] w-full max-w-3xl overflow-visible pt-5">
             <svg viewBox="0 0 760 330" className="block h-full w-full">
-              <g transform={`rotate(${beamAngle} 380 168)`}>
-                <rect x="150" y="162" width="460" height="14" rx="7" fill="#020617" />
-                <line x1="205" y1="170" x2="205" y2="88" stroke="#0f172a" strokeWidth="6" />
-                <line x1="555" y1="170" x2="555" y2="88" stroke="#0f172a" strokeWidth="6" />
+              <g transform={`translate(0 24) rotate(${beamAngle} 380 168)`}>
+                <rect x="150" y="162" width="460" height="14" rx="7" fill={SCALE_COLORS.beam} />
+                <line x1="205" y1="170" x2="205" y2="88" stroke={SCALE_COLORS.rods} strokeWidth="6" />
+                <line x1="555" y1="170" x2="555" y2="88" stroke={SCALE_COLORS.rods} strokeWidth="6" />
               </g>
 
-              <g transform={`translate(0 ${leftCupOffset})`}>
-                <rect x="126" y="72" width="158" height="16" rx="8" fill="#020617" />
-                <path d="M136 92H274C270 126 242 144 206 144C168 144 140 126 136 92Z" fill="#020617" />
-                <circle cx="205" cy="170" r="16" fill="#020617" />
-                <circle cx="205" cy="170" r="8" fill="white" />
-                {/* Центрируем гирю точно над чашей */}
+              <g transform={`translate(0 ${leftCupOffset + 24})`}>
+                <rect x="126" y="72" width="158" height="16" rx="8" fill={SCALE_COLORS.cups} />
+                <path
+                  d="M136 92H274C270 126 242 144 206 144C168 144 140 126 136 92Z"
+                  fill={SCALE_COLORS.cups}
+                />
+                <circle cx="205" cy="170" r="16" fill={SCALE_COLORS.cups} />
+                <circle cx="205" cy="170" r="8" fill={SCALE_COLORS.accent} />
                 <foreignObject x="153" y="15" width="104" height="70">
                   <div className="flex h-full w-full items-end justify-center">
                     <WeightBadge value={round.target} large={true} active={true} />
@@ -162,12 +176,14 @@ export const BalanceScaleGame: React.FC<BalanceScaleGameProps> = ({ maxValue }) 
                 </foreignObject>
               </g>
 
-              <g transform={`translate(0 ${rightCupOffset})`}>
-                <rect x="476" y="72" width="158" height="16" rx="8" fill="#020617" />
-                <path d="M486 92H624C620 126 592 144 555 144C518 144 490 126 486 92Z" fill="#020617" />
-                <circle cx="555" cy="170" r="16" fill="#020617" />
-                <circle cx="555" cy="170" r="8" fill="white" />
-                {/* Контейнер для выбранных гирь */}
+              <g transform={`translate(0 ${rightCupOffset + 24})`}>
+                <rect x="476" y="72" width="158" height="16" rx="8" fill={SCALE_COLORS.cups} />
+                <path
+                  d="M486 92H624C620 126 592 144 555 144C518 144 490 126 486 92Z"
+                  fill={SCALE_COLORS.cups}
+                />
+                <circle cx="555" cy="170" r="16" fill={SCALE_COLORS.cups} />
+                <circle cx="555" cy="170" r="8" fill={SCALE_COLORS.accent} />
                 <foreignObject x="480" y="0" width="150" height="120">
                   <div className="flex h-full w-full flex-col-reverse items-center justify-start gap-1">
                     {selectedWeights.map((weight) => (
@@ -177,11 +193,14 @@ export const BalanceScaleGame: React.FC<BalanceScaleGameProps> = ({ maxValue }) 
                 </foreignObject>
               </g>
 
-              <circle cx="380" cy="168" r="34" fill="#020617" />
-              <circle cx="380" cy="168" r="14" fill="white" />
-              <path d="M350 196H410V280C410 306 397 320 380 326C363 320 350 306 350 280V196Z" fill="#020617" />
-              <rect x="320" y="286" width="120" height="12" rx="6" fill="#020617" />
-              <rect x="308" y="304" width="144" height="10" rx="5" fill="#020617" />
+              <circle cx="380" cy="192" r="34" fill={SCALE_COLORS.pivotOuter} />
+              <circle cx="380" cy="192" r="14" fill={SCALE_COLORS.accent} />
+              <path
+                d="M350 220H410V280C410 306 397 320 380 326C363 320 350 306 350 280V220Z"
+                fill={SCALE_COLORS.stand}
+              />
+              <rect x="320" y="286" width="120" height="12" rx="6" fill={SCALE_COLORS.baseTop} />
+              <rect x="308" y="304" width="144" height="10" rx="5" fill={SCALE_COLORS.baseBottom} />
             </svg>
           </div>
 
@@ -189,8 +208,12 @@ export const BalanceScaleGame: React.FC<BalanceScaleGameProps> = ({ maxValue }) 
             isOpen={showWinMessage}
             isWon={true}
             onPlayAgain={handleNextRound}
-            onSelectLevel={() => window.location.href = '/math/balance-scale'}
-            onMainMenu={() => window.location.href = '/math'}
+            onSelectLevel={() => {
+              window.location.href = '/math/balance-scale'
+            }}
+            onMainMenu={() => {
+              window.location.href = '/math'
+            }}
             title="Чудово!"
             winMessage="Вітаємо!"
             playAgainText="Далі"

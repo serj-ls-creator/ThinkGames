@@ -42,7 +42,7 @@ const speak = (text: string, lang: 'nl-NL' | 'uk-UA') => {
       // Fallback для нидерландского - ищем английский голос
       if (lang === 'nl-NL') {
         const englishVoice = voices.find(v => 
-          v.lang.toLowerCase().includes('en')
+          v.lang.toLowerCase().startsWith('nl')
         );
         if (englishVoice) {
           utterance.voice = englishVoice;
@@ -50,10 +50,7 @@ const speak = (text: string, lang: 'nl-NL' | 'uk-UA') => {
       } else if (lang === 'uk-UA') {
         // Fallback для украинского - ищем любой славянский голос
         const fallbackVoice = voices.find(v => 
-          v.lang.toLowerCase().includes('ru') || 
-          v.lang.toLowerCase().includes('pl') ||
-          v.lang.toLowerCase().includes('bg') ||
-          v.lang.toLowerCase().includes('cs')
+          v.lang.toLowerCase().startsWith('uk')
         );
         if (fallbackVoice) {
           utterance.voice = fallbackVoice;

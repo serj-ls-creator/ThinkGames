@@ -23,14 +23,7 @@ export const updateUserXP = async (
     const currentScore = currentData?.score || 0
     const newScore = currentScore + amount
 
-    const { data: updateData, error: updateError } = await supabase
-      .from('game_progress')
-      .update({ score: newScore })
-      .eq('user_id', userId)
-      .eq('category', category)
-      .select()
-
-    if (updateError) {
+    if (!currentData) {
       const { data: insertData, error: insertError } = await supabase
         .from('game_progress')
         .insert({
@@ -43,6 +36,15 @@ export const updateUserXP = async (
       if (insertError) throw insertError
       return { success: true, data: insertData }
     }
+
+    const { data: updateData, error: updateError } = await supabase
+      .from('game_progress')
+      .update({ score: newScore })
+      .eq('user_id', userId)
+      .eq('category', category)
+      .select()
+
+    if (updateError) throw updateError
 
     return { success: true, data: updateData }
   } catch (error) {
