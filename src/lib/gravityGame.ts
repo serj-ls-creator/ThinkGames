@@ -115,11 +115,12 @@ export function generateLevel(level: number, randomSeed?: number, variant?: Leve
   // Используем переданные размеры canvas или стандартные
   const mapWidth = canvasWidth || MAP_WIDTH
   const mapHeight = canvasHeight || MAP_HEIGHT
+  const isCompactField = mapWidth <= 420
   
   // Ракета всегда в левом нижнем углу
   const ship: Ship = {
-    x: -250, // Левый край (учитывая MAP_WIDTH = 600, от -300 до +300)
-    y: 190,  // Нижний край (учитывая MAP_HEIGHT = 440, от -220 до +220)
+    x: isCompactField ? -138 : -242,
+    y: isCompactField ? 164 : 182,
     vx: 0,
     vy: 0,
     angle: 0,
@@ -133,12 +134,14 @@ export function generateLevel(level: number, randomSeed?: number, variant?: Leve
     const angle = ((positionSeed * 7) % 360) * Math.PI / 180 // Случайный угол
     
     // Адаптивный разброс в зависимости от размеров поля
-    const maxDistance = Math.min(mapWidth, mapHeight) * 0.4 // 40% от меньшего размера
-    const distance = maxDistance * 0.6 + ((positionSeed * 13) % (maxDistance * 0.4)) // 60%-100% от maxDistance
+    const maxDistance = Math.min(mapWidth, mapHeight) * (isCompactField ? 0.28 : 0.4)
+    const distanceSpread = Math.max(1, maxDistance * (isCompactField ? 0.28 : 0.4))
+    const distance = maxDistance * (isCompactField ? 0.62 : 0.6) + ((positionSeed * 13) % distanceSpread)
+    const verticalBias = isCompactField ? 28 : 10
     
     return {
       x: Math.cos(angle) * distance,
-      y: Math.sin(angle) * distance
+      y: Math.sin(angle) * distance - verticalBias
     }
   }
 

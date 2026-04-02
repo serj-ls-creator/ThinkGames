@@ -33,10 +33,17 @@ export default function GravityGameClient({ level }: { level: number }) {
   const hasSaved = useRef(false)
   const audioContextRef = useRef<AudioContext | null>(null)
   const lastThrustSoundAtRef = useRef(0)
+  const lastWallSoundAtRef = useRef(0)
   const previousGameStateRef = useRef<Pick<GameState, 'score' | 'status' | 'wallHit'>>({
     score: 0,
     status: 'playing',
     wallHit: false
+  })
+  const boundaryContactRef = useRef({
+    left: false,
+    right: false,
+    top: false,
+    bottom: false
   })
   
   // Определяем размеры canvas в зависимости от устройства
@@ -61,8 +68,11 @@ export default function GravityGameClient({ level }: { level: number }) {
   const [joystickVector, setJoystickVector] = useState({ x: 0, y: 0 })
   const [isMobile, setIsMobile] = useState(false)
   const [wallHit, setWallHit] = useState(false)
+  const [soundEnabled, setSoundEnabled] = useState(true)
 
   const playTones = useCallback((tones: ToneOptions[]) => {
+    if (!soundEnabled) return
+
     const context = audioContextRef.current ?? createAudioContext()
     if (!context) return
 
@@ -93,7 +103,7 @@ export default function GravityGameClient({ level }: { level: number }) {
       oscillator.start(startAt)
       oscillator.stop(stopAt)
     })
-  }, [])
+  }, [soundEnabled])
 
   const playSuccessSound = useCallback(() => {
     playTones([
@@ -119,15 +129,15 @@ export default function GravityGameClient({ level }: { level: number }) {
 
   const playWallBumpSound = useCallback(() => {
     playTones([
-      { frequency: 210, duration: 0.045, type: 'triangle', volume: 0.045 },
-      { frequency: 160, duration: 0.08, type: 'triangle', volume: 0.03, delay: 0.02 }
+      { frequency: 240, duration: 0.03, type: 'square', volume: 0.07 },
+      { frequency: 180, duration: 0.09, type: 'triangle', volume: 0.05, delay: 0.015 }
     ])
   }, [playTones])
 
   const playThrustSound = useCallback(() => {
     playTones([
-      { frequency: 520, duration: 0.035, type: 'triangle', volume: 0.012 },
-      { frequency: 680, duration: 0.03, type: 'sine', volume: 0.008, delay: 0.01 }
+      { frequency: 360, duration: 0.045, type: 'sine', volume: 0.01 },
+      { frequency: 510, duration: 0.04, type: 'triangle', volume: 0.007, delay: 0.012 }
     ])
   }, [playTones])
 
@@ -142,6 +152,24 @@ export default function GravityGameClient({ level }: { level: number }) {
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
+
+  useEffect(() => {
+    setGameState(generateLevel(level, Date.now(), undefined, canvasSize.width, canvasSize.height))
+    setIsPaused(false)
+    hasSaved.current = false
+    lastTimeRef.current = 0
+    previousGameStateRef.current = {
+      score: 0,
+      status: 'playing',
+      wallHit: false
+    }
+    boundaryContactRef.current = {
+      left: false,
+      right: false,
+      top: false,
+      bottom: false
+    }
+  }, [canvasSize.height, canvasSize.width, level])
 
   useEffect(() => {
     return () => {
@@ -231,6 +259,94 @@ export default function GravityGameClient({ level }: { level: number }) {
       wallHit: gameState.wallHit
     }
   }, [gameState.score, gameState.status, gameState.wallHit, playFailSound, playSuccessSound, playWinSound])
+
+  useEffect(() => {
+    if (!gameState.wallHit) return
+
+    const now = performance.now()
+    if (now - lastWallSoundAtRef.current <= 120) return
+
+    lastWallSoundAtRef.current = now
+    playWallBumpSound()
+  }, [gameState.wallHit, playWallBumpSound])
+
+  useEffect(() => {
+    if (gameState.status !== 'playing') return
+
+    const halfWidth = canvasSize.width / 2 - 5
+    const halfHeight = canvasSize.height / 2 - 5
+    const touchesHorizontalWall =
+      gameState.ship.x - SHIP_RADIUS <= -halfWidth + 1 ||
+      gameState.ship.x + SHIP_RADIUS >= halfWidth - 1
+    const touchesVerticalWall =
+      gameState.ship.y - SHIP_RADIUS <= -halfHeight + 1 ||
+      gameState.ship.y + SHIP_RADIUS >= halfHeight - 1
+
+    if (!touchesHorizontalWall && !touchesVerticalWall) return
+
+    const now = performance.now()
+    if (now - lastWallSoundAtRef.current <= 120) return
+
+    lastWallSoundAtRef.current = now
+    playWallBumpSound()
+  }, [
+    canvasSize.height,
+    canvasSize.width,
+    gameState.ship.x,
+    gameState.ship.y,
+    gameState.status,
+    playWallBumpSound,
+  ])
+
+  useEffect(() => {
+    if (gameState.status !== 'playing') {
+      boundaryContactRef.current = {
+        left: false,
+        right: false,
+        top: false,
+        bottom: false
+      }
+      return
+    }
+
+    const horizontalLimit = canvasSize.width / 2 - SHIP_RADIUS
+    const verticalLimit = canvasSize.height / 2 - SHIP_RADIUS
+    const horizontalTolerance = 4
+    const verticalTolerance = isMobile ? 10 : 6
+    const nextContacts = {
+      left: gameState.ship.x <= -horizontalLimit + horizontalTolerance && gameState.ship.vx <= 0,
+      right: gameState.ship.x >= horizontalLimit - horizontalTolerance && gameState.ship.vx >= 0,
+      top: gameState.ship.y <= -verticalLimit + verticalTolerance && gameState.ship.vy <= 0,
+      bottom: gameState.ship.y >= verticalLimit - verticalTolerance && gameState.ship.vy >= 0
+    }
+
+    const previousContacts = boundaryContactRef.current
+    const hasNewContact =
+      (nextContacts.left && !previousContacts.left) ||
+      (nextContacts.right && !previousContacts.right) ||
+      (nextContacts.top && !previousContacts.top) ||
+      (nextContacts.bottom && !previousContacts.bottom)
+
+    if (hasNewContact) {
+      const now = performance.now()
+      if (now - lastWallSoundAtRef.current > 120) {
+        lastWallSoundAtRef.current = now
+        playWallBumpSound()
+      }
+    }
+
+    boundaryContactRef.current = nextContacts
+  }, [
+    canvasSize.height,
+    canvasSize.width,
+    gameState.ship.vx,
+    gameState.ship.vy,
+    gameState.ship.x,
+    gameState.ship.y,
+    isMobile,
+    gameState.status,
+    playWallBumpSound
+  ])
 
   useEffect(() => {
     if (!gameState.ship.thrust || gameState.status !== 'playing') return
@@ -329,7 +445,11 @@ export default function GravityGameClient({ level }: { level: number }) {
         // Обновляем wallHit в состоянии
         newState.wallHit = wallHit
         if (wallHit) {
-          playWallBumpSound()
+          const now = performance.now()
+          if (now - lastWallSoundAtRef.current > 120) {
+            lastWallSoundAtRef.current = now
+            playWallBumpSound()
+          }
         }
 
         // Обновляем физику
@@ -556,12 +676,25 @@ export default function GravityGameClient({ level }: { level: number }) {
           transition={{ delay: 0.5, duration: 0.3 }}
           className="mt-4 flex flex-col items-center gap-2"
         >
-          <div className="relative">
+          <div className="relative flex w-[220px] items-center justify-center">
             <Joystick 
               onMove={handleJoystickMove}
               size={100}
               stickSize={32}
             />
+            <button
+              type="button"
+              onClick={() => setSoundEnabled((current) => !current)}
+              className={`absolute right-0 flex h-12 w-12 items-center justify-center rounded-2xl border-2 text-xl shadow-lg transition-all duration-200 ${
+                soundEnabled
+                  ? 'border-emerald-300 bg-white text-emerald-600 hover:bg-emerald-50'
+                  : 'border-slate-300 bg-white text-slate-500 hover:bg-slate-50'
+              }`}
+              aria-label={soundEnabled ? 'Вимкнути звук' : 'Увімкнути звук'}
+              title={soundEnabled ? 'Вимкнути звук' : 'Увімкнути звук'}
+            >
+              {soundEnabled ? '🔊' : '🔇'}
+            </button>
           </div>
         </motion.div>
 
