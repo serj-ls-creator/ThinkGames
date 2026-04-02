@@ -9,6 +9,21 @@ import { getNextVariant, resetVariantIndex, LevelVariant } from '../../../../src
 import GameEndModal from '../../../../src/components/GameEndModal'
 import Joystick from '../../../../src/components/ui/Joystick'
 
+type ToneOptions = {
+  frequency: number
+  duration: number
+  type?: OscillatorType
+  volume?: number
+  delay?: number
+}
+
+const createAudioContext = () => {
+  if (typeof window === 'undefined') return null
+
+  const AudioContextClass = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+  return AudioContextClass ? new AudioContextClass() : null
+}
+
 export default function GravityGameClient({ level }: { level: number }) {
   const { user } = useAuth()
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -16,6 +31,13 @@ export default function GravityGameClient({ level }: { level: number }) {
   const lastTimeRef = useRef<number>(0)
   const keysRef = useRef<Set<string>>(new Set())
   const hasSaved = useRef(false)
+  const audioContextRef = useRef<AudioContext | null>(null)
+  const lastThrustSoundAtRef = useRef(0)
+  const previousGameStateRef = useRef<Pick<GameState, 'score' | 'status' | 'wallHit'>>({
+    score: 0,
+    status: 'playing',
+    wallHit: false
+  })
   
   // Определяем размеры canvas в зависимости от устройства
   const [canvasSize, setCanvasSize] = useState({ width: 600, height: 440 })
@@ -40,6 +62,75 @@ export default function GravityGameClient({ level }: { level: number }) {
   const [isMobile, setIsMobile] = useState(false)
   const [wallHit, setWallHit] = useState(false)
 
+  const playTones = useCallback((tones: ToneOptions[]) => {
+    const context = audioContextRef.current ?? createAudioContext()
+    if (!context) return
+
+    audioContextRef.current = context
+
+    if (context.state === 'suspended') {
+      void context.resume().catch(() => {})
+    }
+
+    const now = context.currentTime
+
+    tones.forEach(({ frequency, duration, type = 'sine', volume = 0.04, delay = 0 }) => {
+      const oscillator = context.createOscillator()
+      const gainNode = context.createGain()
+      const startAt = now + delay
+      const stopAt = startAt + duration
+
+      oscillator.type = type
+      oscillator.frequency.setValueAtTime(frequency, startAt)
+
+      gainNode.gain.setValueAtTime(0.0001, startAt)
+      gainNode.gain.exponentialRampToValueAtTime(volume, startAt + 0.01)
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, stopAt)
+
+      oscillator.connect(gainNode)
+      gainNode.connect(context.destination)
+
+      oscillator.start(startAt)
+      oscillator.stop(stopAt)
+    })
+  }, [])
+
+  const playSuccessSound = useCallback(() => {
+    playTones([
+      { frequency: 740, duration: 0.08, type: 'triangle', volume: 0.05 },
+      { frequency: 988, duration: 0.12, type: 'triangle', volume: 0.05, delay: 0.08 }
+    ])
+  }, [playTones])
+
+  const playFailSound = useCallback(() => {
+    playTones([
+      { frequency: 220, duration: 0.12, type: 'sawtooth', volume: 0.05 },
+      { frequency: 160, duration: 0.18, type: 'sawtooth', volume: 0.045, delay: 0.08 }
+    ])
+  }, [playTones])
+
+  const playWinSound = useCallback(() => {
+    playTones([
+      { frequency: 523.25, duration: 0.1, type: 'triangle', volume: 0.05 },
+      { frequency: 659.25, duration: 0.1, type: 'triangle', volume: 0.05, delay: 0.1 },
+      { frequency: 783.99, duration: 0.18, type: 'triangle', volume: 0.05, delay: 0.2 }
+    ])
+  }, [playTones])
+
+  const playWallBumpSound = useCallback(() => {
+    playTones([
+      { frequency: 210, duration: 0.045, type: 'triangle', volume: 0.045 },
+      { frequency: 160, duration: 0.08, type: 'triangle', volume: 0.03, delay: 0.02 }
+    ])
+  }, [playTones])
+
+  const playThrustSound = useCallback(() => {
+    playTones([
+      { frequency: 520, duration: 0.035, type: 'triangle', volume: 0.012 },
+      { frequency: 680, duration: 0.03, type: 'sine', volume: 0.008, delay: 0.01 }
+    ])
+  }, [playTones])
+
   // Определяем мобильное устройство
   useEffect(() => {
     const checkMobile = () => {
@@ -50,6 +141,14 @@ export default function GravityGameClient({ level }: { level: number }) {
     checkMobile()
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        void audioContextRef.current.close().catch(() => {})
+      }
+    }
   }, [])
 
   // Обработка джойстика
@@ -63,6 +162,11 @@ export default function GravityGameClient({ level }: { level: number }) {
     setIsPaused(false)
     hasSaved.current = false
     lastTimeRef.current = 0
+    previousGameStateRef.current = {
+      score: 0,
+      status: 'playing',
+      wallHit: false
+    }
   }, [level])
 
   // Обработка клавиатуры
@@ -107,6 +211,36 @@ export default function GravityGameClient({ level }: { level: number }) {
       saveGameResult(user.id, 'math', 10, false)
     }
   }, [gameState.status, user?.id])
+
+  useEffect(() => {
+    const previous = previousGameStateRef.current
+
+    if (gameState.score > previous.score) {
+      playSuccessSound()
+    }
+
+    if (gameState.status === 'won' && previous.status !== 'won') {
+      playWinSound()
+    } else if (gameState.status === 'lost' && previous.status !== 'lost') {
+      playFailSound()
+    }
+
+    previousGameStateRef.current = {
+      score: gameState.score,
+      status: gameState.status,
+      wallHit: gameState.wallHit
+    }
+  }, [gameState.score, gameState.status, gameState.wallHit, playFailSound, playSuccessSound, playWinSound])
+
+  useEffect(() => {
+    if (!gameState.ship.thrust || gameState.status !== 'playing') return
+
+    const now = performance.now()
+    if (now - lastThrustSoundAtRef.current < 90) return
+
+    lastThrustSoundAtRef.current = now
+    playThrustSound()
+  }, [gameState.ship.thrust, gameState.status, playThrustSound])
 
   // Игровой цикл
   useEffect(() => {
@@ -194,6 +328,9 @@ export default function GravityGameClient({ level }: { level: number }) {
 
         // Обновляем wallHit в состоянии
         newState.wallHit = wallHit
+        if (wallHit) {
+          playWallBumpSound()
+        }
 
         // Обновляем физику
         return updatePhysics(newState, deltaTime * 60, canvasSize.width, canvasSize.height) // Нормализуем deltaTime
@@ -209,7 +346,7 @@ export default function GravityGameClient({ level }: { level: number }) {
         cancelAnimationFrame(animationRef.current)
       }
     }
-  }, [isPaused, gameState.status, joystickVector, gameState.asteroids.length]) // Добавил joystickVector и gameState.asteroids.length
+  }, [isPaused, gameState.status, joystickVector, gameState.asteroids.length, playWallBumpSound]) // Добавил joystickVector и gameState.asteroids.length
 
   // Рендеринг игры
   useEffect(() => {
@@ -335,6 +472,11 @@ export default function GravityGameClient({ level }: { level: number }) {
     setIsPaused(false)
     hasSaved.current = false
     lastTimeRef.current = 0
+    previousGameStateRef.current = {
+      score: 0,
+      status: 'playing',
+      wallHit: false
+    }
   }
 
   return (
