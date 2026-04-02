@@ -60,7 +60,7 @@ const createSolutionValues = (target: number, partsCount: number) => {
 
 const createDecoyValues = (target: number, maxValue: number, count: number, blockedValues: number[]) => {
   const decoys: number[] = []
-  const used = new Set(blockedValues)
+  const used = new Set([...blockedValues, target])
 
   while (decoys.length < count) {
     const nextValue = Math.max(1, Math.floor(Math.random() * Math.min(maxValue, target + Math.ceil(maxValue / 4))) + 1)
