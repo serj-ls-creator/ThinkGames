@@ -14,6 +14,26 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+function getSignupRedirectUrl() {
+  const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim()
+
+  if (typeof window !== 'undefined') {
+    const origin = window.location.origin
+    const isLocalhost =
+      origin.includes('localhost') || origin.includes('127.0.0.1')
+
+    if (!isLocalhost) {
+      return origin
+    }
+  }
+
+  if (configuredSiteUrl) {
+    return configuredSiteUrl
+  }
+
+  return 'https://think-games.vercel.app'
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
@@ -52,6 +72,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: getSignupRedirectUrl(),
+      },
     })
     return { error }
   }
