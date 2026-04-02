@@ -6,9 +6,9 @@ import { usePathname } from 'next/navigation'
 
 const NAV_ITEMS = [
   { id: 'home', label: 'Головна', icon: '🏠', href: '/' },
-  { id: 'games', label: 'Ігри', icon: '🎮', href: '/math' },
+  { id: 'games', label: 'Ігри', icon: '🎮', href: '/games' },
   { id: 'leaderboard', label: 'Leaderboard', icon: '🏆', href: '/leaderboard' },
-  { id: 'profile', label: 'Профіль', icon: '👤', href: '/profile' }
+  { id: 'profile', label: 'Профіль', icon: '👤', href: '/profile' },
 ] as const
 
 export const BottomNav: React.FC = () => {
@@ -24,7 +24,7 @@ export const BottomNav: React.FC = () => {
       <div className="mx-auto max-w-sm">
         <div className="flex items-center justify-around">
           {NAV_ITEMS.map((item) => {
-            const isActive = pathname === item.href
+            const isActive = item.href === '/' ? pathname === item.href : pathname.startsWith(item.href)
 
             return (
               <Link key={item.id} href={item.href}>
