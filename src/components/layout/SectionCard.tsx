@@ -29,25 +29,30 @@ export const SectionCard: React.FC<SectionCardProps> = ({
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
           <div className={`h-2 bg-gradient-to-r ${color}`}></div>
           <div className="p-5">
-            <div className="flex items-start justify-between mb-3 gap-2">
-              <div className="flex items-center space-x-3 flex-1 min-w-0">
-                <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white/70 ring-1 ring-black/5 flex-shrink-0">
-                  {isImageIcon ? (
-                    <img src={icon} alt="" className="h-8 w-8 rounded-full object-cover" />
-                  ) : (
-                    <span className="text-3xl leading-none">{icon}</span>
-                  )}
+            <div className="mb-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center space-x-3 flex-1 min-w-0">
+                  <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white/70 ring-1 ring-black/5 flex-shrink-0">
+                    {isImageIcon ? (
+                      <img src={icon} alt="" className="h-8 w-8 rounded-full object-cover" />
+                    ) : (
+                      <span className="text-3xl leading-none">{icon}</span>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-bold text-gray-800 truncate">{title}</h3>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-bold text-gray-800 truncate">{title}</h3>
-                  <p className="text-sm text-gray-600 mt-1 truncate">{description}</p>
-                </div>
+                {level && (
+                  <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-2 py-0.5 rounded-full text-[8px] font-bold leading-none whitespace-nowrap flex-shrink-0">
+                    Lvl {level}
+                  </div>
+                )}
               </div>
-              {level && (
-                <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-2 py-0.5 rounded-full text-[8px] font-bold leading-none whitespace-nowrap flex-shrink-0">
-                  Lvl {level}
-                </div>
-              )}
+
+              <p className="mt-2 text-[13px] text-gray-600 whitespace-nowrap">
+                {description}
+              </p>
             </div>
             
             <div className="mb-4">

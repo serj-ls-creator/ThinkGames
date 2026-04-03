@@ -48,6 +48,9 @@ export const BALLOON_DIFFICULTIES: BalloonDifficulty[] = [
 
 const getCellId = (row: number, col: number) => `${row}-${col}`
 
+const isEdgeCell = (row: number, col: number, rows: number, cols: number) =>
+  row === 0 || col === 0 || row === rows - 1 || col === cols - 1
+
 const getNeighbors = (row: number, col: number, rows: number, cols: number) => {
   const neighbors: Array<{ row: number; col: number }> = []
 
@@ -92,14 +95,44 @@ export const createBalloonBoard = (
     ].map(({ row, col }) => getCellId(row, col))
   )
 
-  const availableIds = cells.filter((cell) => !protectedCells.has(cell.id)).map((cell) => cell.id)
+  const availableCells = cells.filter((cell) => !protectedCells.has(cell.id))
+  const interiorIds = availableCells
+    .filter((cell) => !isEdgeCell(cell.row, cell.col, difficulty.rows, difficulty.cols))
+    .map((cell) => cell.id)
+  const edgeIds = availableCells
+    .filter((cell) => isEdgeCell(cell.row, cell.col, difficulty.rows, difficulty.cols))
+    .map((cell) => cell.id)
 
-  for (let index = availableIds.length - 1; index > 0; index -= 1) {
-    const randomIndex = Math.floor(Math.random() * (index + 1))
-    ;[availableIds[index], availableIds[randomIndex]] = [availableIds[randomIndex], availableIds[index]]
+  const shuffleIds = (ids: string[]) => {
+    const nextIds = [...ids]
+
+    for (let index = nextIds.length - 1; index > 0; index -= 1) {
+      const randomIndex = Math.floor(Math.random() * (index + 1))
+      ;[nextIds[index], nextIds[randomIndex]] = [nextIds[randomIndex], nextIds[index]]
+    }
+
+    return nextIds
   }
 
-  availableIds.slice(0, difficulty.mines).forEach((cellId) => {
+  const shuffledInteriorIds = shuffleIds(interiorIds)
+  const shuffledEdgeIds = shuffleIds(edgeIds)
+  const preferredEdgeMineCount = Math.min(2, difficulty.mines, shuffledEdgeIds.length)
+  const remainingMineCount = difficulty.mines - preferredEdgeMineCount
+  const needsExtraEdgeMines = Math.max(0, remainingMineCount - shuffledInteriorIds.length)
+  const finalEdgeMineCount = Math.min(
+    shuffledEdgeIds.length,
+    preferredEdgeMineCount + needsExtraEdgeMines
+  )
+  const finalInteriorMineCount = Math.min(
+    shuffledInteriorIds.length,
+    difficulty.mines - finalEdgeMineCount
+  )
+  const mineIds = [
+    ...shuffledInteriorIds.slice(0, finalInteriorMineCount),
+    ...shuffledEdgeIds.slice(0, finalEdgeMineCount),
+  ]
+
+  mineIds.forEach((cellId) => {
     const cell = cells.find((item) => item.id === cellId)
     if (cell) {
       cell.hasMine = true
