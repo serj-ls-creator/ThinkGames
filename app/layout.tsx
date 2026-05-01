@@ -10,6 +10,7 @@ const inter = Inter({
 export const metadata = {
   title: 'ThinkGames - Освітні ігри для дітей',
   description: 'Освітній додаток для дітей 8-12 років для вивчення математики через ігри',
+  themeColor: '#FFFFFF',
 }
 
 export default function RootLayout({
