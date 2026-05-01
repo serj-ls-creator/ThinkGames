@@ -107,13 +107,6 @@ export default function WriteWordGamePage({ params }: WriteWordGamePageProps) {
     }
   }, [currentWord])
 
-  // Автоматическая озвучка при старте нового слова
-  useEffect(() => {
-    if (currentWord) {
-      setTimeout(() => speakText(currentWord, 'uk-UA'), 500)
-    }
-  }, [currentWord])
-
   const initializeWord = () => {
     hasSaved.current = false; // Сброс при начале нового слова
     setShowLevelComplete(false); // Сброс состояния завершения уровня
